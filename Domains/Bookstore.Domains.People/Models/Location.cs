@@ -1,0 +1,48 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
+
+namespace Bookstore.Domains.People.Models
+{
+    public class Location : ISerializable, IEquatable<Location>
+    {
+        public Guid Id { get; set; }
+        public Guid CompanyId { get; set; }
+        public bool Primary { get; set; }
+        public Address MailingAddress { get; set; }
+        public Address StreetAddress { get; set; }
+        public List<Person> Contacts { get; set; }
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue("Id", Id);
+            info.AddValue("Primary", Primary);
+            info.AddValue("MailingAddress", MailingAddress);
+            info.AddValue("StreetAddress", StreetAddress);
+            info.AddValue("Contacts", Contacts);
+        }
+
+        public bool Equals(Location other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            var contactsEqual = Contacts != null && other.Contacts != null
+                ? Contacts.All(other.Contacts.Contains) && other.Contacts.All(Contacts.Contains)
+                : (Contacts?.Count ?? 0) == (other.Contacts?.Count ?? 0);
+            return Id.Equals(other.Id) && Primary == other.Primary && Equals(MailingAddress, other.MailingAddress) && Equals(StreetAddress, other.StreetAddress) && contactsEqual;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Location) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, Primary, MailingAddress, StreetAddress, Contacts);
+        }
+    }
+}

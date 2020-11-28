@@ -1,0 +1,11 @@
+﻿{
+  "profiles": {
+    "Bookstore.Services.Workers.People": {
+      "commandName": "Project",
+      "dotnetRunMessages": "true",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

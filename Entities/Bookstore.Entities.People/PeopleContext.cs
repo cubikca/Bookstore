@@ -1,0 +1,32 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Bookstore.Entities.People.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Bookstore.Entities.People
+{
+    public class PeopleContext : DbContext
+    {
+        public PeopleContext(DbContextOptions<PeopleContext> dbopt) : base(dbopt) { }
+
+        public DbSet<Company> Companies { get; set; }
+        public DbSet<Person> People { get; set; }
+        public DbSet<PersonGivenName> PersonGivenNames { get; set; }
+        public DbSet<PersonKnownAsName> PersonKnownAsNames { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
+        public DbSet<LocationContact> LocationContacts { get; set; }
+        public DbSet<Address> Addresses { get; set; }
+        public DbSet<EmailAddress> EmailAddresses { get; set; }
+        public DbSet<PhoneNumber> PhoneNumbers { get; set; }
+        public DbSet<OnlinePresence> OnlinePresence { get; set; }
+        public DbSet<Country> Countries { get; set; }
+        public DbSet<Province> Provinces { get; set; }
+        public DbSet<Location> Locations { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<LocationContact>().HasKey(lc => new {lc.LocationId, lc.ContactId});
+        }
+    }
+}

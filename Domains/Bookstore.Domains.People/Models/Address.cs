@@ -1,0 +1,42 @@
+﻿using System;
+using System.Runtime.Serialization;
+
+namespace Bookstore.Domains.People.Models
+{
+    public class Address : ISerializable, IEquatable<Address>
+    {
+        public Guid Id { get; set; }
+        public string Street1 { get; set; }
+        public string Street2 { get; set; }
+        public string City { get; set; }
+        public Province Province { get; set; }
+        public string PostalCode { get; set; }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue("Id", Id);
+            info.AddValue("Street1", Street1);
+            info.AddValue("Street2", Street2);
+            info.AddValue("City", City);
+            info.AddValue("Province", Province);
+            info.AddValue("PostalCode", PostalCode);
+        }
+
+        public bool Equals(Address other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Id.Equals(other.Id) && Street1 == other.Street1 && Street2 == other.Street2 && City == other.City && PostalCode == other.PostalCode && Equals(Province, other.Province);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return ReferenceEquals(this, obj) || obj is Address other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, Street1, Street2, City, Province, PostalCode);
+        }
+    }
+}
