@@ -37,7 +37,7 @@ namespace Bookstore.Tests.Entities.People
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                opt.UseSqlServer("Data Source=(local);Initial Catalog=PeopleSubjectTests;User Id=dev;Password=development");
+                opt.UseSqlServer("Data Source=(local);Initial Catalog=PeopleSubjectTests;User Id=brian;Password=development");
             });
             services.AddLogging(opt => opt.AddConsole());
             var sp = services.BuildServiceProvider();

@@ -31,7 +31,7 @@ namespace Bookstore.Tests.Entities.People
             {
                 opt.UseLazyLoadingProxies();
                 opt.UseSqlServer(
-                    "Data Source=(local);Initial Catalog=PeopleCompanyTests;User Id=dev;Password=development");
+                    "Data Source=(local);Initial Catalog=PeopleCompanyTests;User Id=brian;Password=development");
             });
             services.AddLogging(opt => opt.AddConsole());
             var sp = services.BuildServiceProvider();
