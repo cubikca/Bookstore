@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using Bookstore.Domains.People.Models;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Tests.Entities.People
+namespace Bookstore.Entities.People.Tests
 {
-    public class CountryFiller : FillerBase
+    public class CompanyFiller : FillerBase
     {
-        public Country FillCountry()
+        public Company FillCompany()
         {
-            var filler = new Filler<Country>();
-            filler.Setup(CountrySetup);
+            var filler = new Filler<Company>();
+            filler.Setup(CompanySetup);
             return filler.Create();
         }
     }

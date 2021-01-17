@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Tests.Entities.People
+namespace Bookstore.Entities.People.Tests
 {
     public class CountryTests
     {

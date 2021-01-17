@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Bookstore.Domains.People.Models;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Tests.Entities.People
+namespace Bookstore.Entities.People.Tests
 {
     public abstract class FillerBase
     {

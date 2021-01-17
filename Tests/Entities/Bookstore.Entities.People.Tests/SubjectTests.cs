@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
-namespace Bookstore.Tests.Entities.People
+namespace Bookstore.Entities.People.Tests
 {
     [TestFixture]
     public class SubjectTests

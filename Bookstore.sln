@@ -35,11 +35,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bookstore.Services.Workers.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{B3310607-5A3D-4B45-A2E3-83C30118D468}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Tests.Entities.People", "Tests\Entities\Bookstore.Tests.Entities.People\Bookstore.Tests.Entities.People.csproj", "{82B229A4-17BA-4111-AE27-7F26787FF584}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Entities.People.Tests", "Tests\Entities\Bookstore.Entities.People.Tests\Bookstore.Entities.People.Tests.csproj", "{82B229A4-17BA-4111-AE27-7F26787FF584}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitWarren", "RabbitWarren\RabbitWarren.csproj", "{1092CA71-ADFA-45A7-95C3-6F8608356087}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Tests.Services.People", "Tests\Bookstore.Tests.Services.People\Bookstore.Tests.Services.People.csproj", "{DD029BF4-2104-4807-A921-BCDEE7E65EDD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Services.People.Tests", "Tests\Bookstore.Services.People.Tests\Bookstore.Services.People.Tests.csproj", "{DD029BF4-2104-4807-A921-BCDEE7E65EDD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

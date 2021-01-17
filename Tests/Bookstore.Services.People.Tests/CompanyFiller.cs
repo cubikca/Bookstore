@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Bookstore.Domains.People.Models;
+﻿using Bookstore.Domains.People.Models;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Tests.Entities.People
+namespace Bookstore.Services.People.Tests
 {
     public class CompanyFiller : FillerBase
     {

@@ -28,7 +28,7 @@ namespace Bookstore.Services.Workers.People
 
         public static async Task Main(string[] args)
         {
-            RabbitMQConnectionFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "localhost", "people", 5672, null, null, "dev", "development");
+            RabbitMQConnectionFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "localhost", "people", 5672, null, null, "brian", "development");
             RabbitMQConnectionFactory.ServiceContainer = BuildServiceContainer();
             var dbFactory = RabbitMQConnectionFactory.ServiceContainer.Resolve<IDbContextFactory<PeopleContext>>();
             await using var db = dbFactory.CreateDbContext();
@@ -44,7 +44,7 @@ namespace Bookstore.Services.Workers.People
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                opt.UseSqlServer("Data Source=localhost;User Id=dev;Password=development;Initial Catalog=PeopleDevelopment");
+                opt.UseSqlServer("Data Source=localhost;User Id=brian;Password=development;Initial Catalog=PeopleDevelopment");
             });
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
@@ -64,7 +64,7 @@ namespace Bookstore.Services.Workers.People
                 Host = "localhost",
                 Password = "development",
                 Port = 5672,
-                Username = "dev",
+                Username = "brian",
                 VirtualHost = "people"
             });
             services.AddScoped(sp => sp.GetService<RabbitMQConnectionFactory>()?.Create());
@@ -85,7 +85,7 @@ namespace Bookstore.Services.Workers.People
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<Worker>();
-                    var rmqFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "localhost", "people", 5672, null, BuildServiceContainer(), "dev", "development");
+                    var rmqFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "localhost", "people", 5672, null, BuildServiceContainer(), "brian", "development");
                     services.AddSingleton(rmqFactory);
                     services.AddLogging(cfg => cfg.AddConsole());
                     services.AddTransient(sp =>

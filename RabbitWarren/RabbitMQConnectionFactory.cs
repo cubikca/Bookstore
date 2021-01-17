@@ -77,6 +77,7 @@ namespace RabbitWarren
                 VirtualHost = vhost,
                 UserName = username,
                 Password = password,
+                Port = port,
                 Ssl = sslOption ?? new SslOption {Enabled = false},
                 AuthMechanisms = authMechanisms,
                 DispatchConsumersAsync = true

@@ -1,7 +1,7 @@
 ﻿using Bookstore.Domains.People.Models;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Tests.Services.People
+namespace Bookstore.Services.People.Tests
 {
     public class CountryFiller : FillerBase
     {

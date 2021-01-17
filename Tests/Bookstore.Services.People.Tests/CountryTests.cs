@@ -17,7 +17,7 @@ using RabbitWarren;
 using RabbitWarren.Messaging;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Tests.Services.People
+namespace Bookstore.Services.People.Tests
 {
     public class CountryTests
     {
@@ -32,8 +32,8 @@ namespace Bookstore.Tests.Services.People
         {
             _countryFiller = new Filler<Country>();
             _provinceFiller = new Filler<Province>();
-            var rmqFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "localhost", "people", 5672, null,
-                new ContainerBuilder().Build(), "dev", "development");
+            var rmqFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "127.0.0.1", "people", 5672, null,
+                new ContainerBuilder().Build(), "brian", "development");
             _rmqConnection = rmqFactory.Create();
             _publishChannel = _rmqConnection.OpenPublishChannel("rabbitwarren");
             var consumerChannel =

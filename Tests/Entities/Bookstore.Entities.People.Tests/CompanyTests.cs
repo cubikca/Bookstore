@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging.Console;
 using NUnit.Framework;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Tests.Entities.People
+namespace Bookstore.Entities.People.Tests
 {
     [TestFixture]
     public class CompanyTests
