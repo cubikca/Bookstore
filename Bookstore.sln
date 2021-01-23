@@ -39,8 +39,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Entities.People.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Services.People.Tests", "Tests\Bookstore.Services.People.Tests\Bookstore.Services.People.Tests.csproj", "{DD029BF4-2104-4807-A921-BCDEE7E65EDD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitWarren", "RabbitWarren\src\RabbitWarren\RabbitWarren.csproj", "{D6AC2F76-179D-4281-B2D1-03208F2C5AA6}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
