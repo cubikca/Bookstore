@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Domains\Bookstore.Domains.People\Bookstore.Domains.People.csproj" />
-    <ProjectReference Include="..\..\RabbitWarren\RabbitWarren.csproj" />
+    <ProjectReference Include="..\..\RabbitWarren\src\RabbitWarren\RabbitWarren.csproj" />
   </ItemGroup>
 
 </Project>

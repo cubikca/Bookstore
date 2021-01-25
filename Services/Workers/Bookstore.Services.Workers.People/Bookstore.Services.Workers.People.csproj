@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Entities\Bookstore.Entities.People\Bookstore.Entities.People.csproj" />
-    <ProjectReference Include="..\..\..\RabbitWarren\RabbitWarren.csproj" />
+    <ProjectReference Include="..\..\..\RabbitWarren\src\RabbitWarren\RabbitWarren.csproj" />
     <ProjectReference Include="..\..\Bookstore.Services.People\Bookstore.Services.People.csproj" />
   </ItemGroup>
 </Project>
