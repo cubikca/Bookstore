@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="CommandHandlers" />
+      <Folder Include="QueryHandlers" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Domains\Bookstore.Domains.Book\Bookstore.Domains.Book.csproj" />
+      <ProjectReference Include="..\..\Entities\Bookstore.Entities.Book\Bookstore.Entities.Book.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -18,13 +18,11 @@ namespace Bookstore.Entities.Book.Repositories
         private IPersonRepository _people;
         private ICompanyRepository _companies;
 
-        public BookRepository(BookContext db, ILogger logger, IMapper mapper, IPersonRepository people, ICompanyRepository companies)
+        public BookRepository(BookContext db, ILogger logger, IMapper mapper)
         {
             _db = db;
             _log = logger;
             _mapper = mapper;
-            _people = people;
-            _companies = companies;
         }
 
         public async Task<Domains.Book.Models.Book> SaveBook(Domains.Book.Models.Book book)
@@ -41,9 +39,9 @@ namespace Bookstore.Entities.Book.Repositories
             }
             catch (Exception ex)
             {
-                var error = $"Error while saving book: {ex.GetBaseException().Message}";
-                _log.LogError(error);
-                throw new EntityException(error, ex);
+                var message = ex.GetBaseException().Message;
+                _log.LogError("Error while saving book: {Message}", message);
+                throw new EntityException(message, ex);
             }
         }
 
@@ -56,9 +54,9 @@ namespace Bookstore.Entities.Book.Repositories
             }
             catch (Exception ex)
             {
-                var error = $"Error while retrieving books: {ex.GetBaseException().Message}";
-                _log.LogError(error);
-                throw new EntityException(error, ex);
+                var message = ex.GetBaseException().Message;
+                _log.LogError("Error while retrieving books: {Message}", message);
+                throw new EntityException(message, ex);
             }
         }
 
@@ -71,9 +69,9 @@ namespace Bookstore.Entities.Book.Repositories
             }
             catch (Exception ex)
             {
-                var error = $"Error while retrieving book: {ex.GetBaseException().Message}";
-                _log.LogError(error);
-                throw new EntityException(error, ex);
+                var message = ex.GetBaseException().Message;
+                _log.LogError("Error while retrieving books: {Message}", message);
+                throw new EntityException(message, ex);
             }
         }
 
@@ -90,9 +88,9 @@ namespace Bookstore.Entities.Book.Repositories
             }
             catch (Exception ex)
             {
-                var error = $"Error while removing book: {ex.GetBaseException().Message}";
-                _log.LogError(error);
-                throw new EntityException(error, ex);
+                var message = ex.GetBaseException().Message;
+                _log.LogError("Error while retrieving books: {Message}", message);
+                throw new EntityException(message, ex);
             }
         }
     }

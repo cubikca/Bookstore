@@ -10,7 +10,7 @@ namespace Bookstore.Domains.Book.Models
         public string ISBN { get; set; }
         public string Title { get; set; }
         public string Subtitle { get; set; }
-        public List<Author> Authors { get; set; }
+        public IList<Author> Authors { get; set; }
         public int Edition { get; set; }
         public DateTime PublishDate { get; set; }
         public Subject Publisher { get; set; }

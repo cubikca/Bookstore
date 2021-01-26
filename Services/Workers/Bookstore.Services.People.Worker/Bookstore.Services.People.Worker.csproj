@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>dotnet-Bookstore.Services.Workers.People-02B6F473-7006-409E-A206-3059F8F2EE78</UserSecretsId>
+    <RootNamespace>Bookstore.Services.Workers.People</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

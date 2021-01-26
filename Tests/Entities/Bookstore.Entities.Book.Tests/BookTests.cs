@@ -4,7 +4,7 @@ namespace Bookstore.Entities.Book.Tests
 {
     public class BookTests
     {
-        [SetUp]
+        [OneTimeSetUp]
         public void Setup()
         {
         }
@@ -13,6 +13,18 @@ namespace Bookstore.Entities.Book.Tests
         public void TestFind()
         {
             Assert.Pass();
+        }
+
+        [Test]
+        public void TestCreate()
+        {
+            Assert.Pass();
+        }
+
+        [OneTimeTearDown]
+        public void TestRemove()
+        {
+            
         }
     }
 }

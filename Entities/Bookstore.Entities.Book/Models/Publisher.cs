@@ -1,19 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
-using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Entities.Book.Models
 {
-    public class Author
+    public class Publisher
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
         public Guid DetailsId { get; set; }
         public virtual IList<Book> Books { get; set; }
-        public decimal Salary { get; set; }
     }
 }

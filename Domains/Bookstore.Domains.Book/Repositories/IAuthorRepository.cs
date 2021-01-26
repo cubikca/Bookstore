@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Bookstore.Domains.Book.Models;
 
 namespace Bookstore.Domains.Book.Repositories
 {
     public interface IAuthorRepository
     {
-        Author SaveAuthor(Author author);
-        IList<Author> FindAllAuthors();
-        Author FindAuthorById(Guid authorId);
-        bool RemoveAuthor(Guid authorId);
+        Task<Author> SaveAuthor(Author author); 
+        Task<IList<Author>> FindAllAuthors();
+        Task<Author> FindAuthorById(Guid authorId);
+        Task<bool> RemoveAuthor(Guid authorId); // and all books by that author
     }
 }

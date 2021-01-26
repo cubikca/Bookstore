@@ -31,7 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bookstore.Entities.Book", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bookstore.Services.People", "Services\Bookstore.Services.People\Bookstore.Services.People.csproj", "{3B263116-C763-4E77-A65A-872B912F9A18}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bookstore.Services.Workers.People", "Services\Workers\Bookstore.Services.Workers.People\Bookstore.Services.Workers.People.csproj", "{BB90F2EB-CDCE-49CB-8562-FD74B1A4BC25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bookstore.Services.People.Worker", "Services\Workers\Bookstore.Services.People.Worker\Bookstore.Services.People.Worker.csproj", "{BB90F2EB-CDCE-49CB-8562-FD74B1A4BC25}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{B3310607-5A3D-4B45-A2E3-83C30118D468}"
 EndProject
@@ -40,6 +40,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Services.People.Tests", "Tests\Bookstore.Services.People.Tests\Bookstore.Services.People.Tests.csproj", "{DD029BF4-2104-4807-A921-BCDEE7E65EDD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitWarren", "RabbitWarren\src\RabbitWarren\RabbitWarren.csproj", "{487E18E7-8B92-4B47-9029-9146B07EDD30}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Entities.Book.Tests", "Tests\Entities\Bookstore.Entities.Book.Tests\Bookstore.Entities.Book.Tests.csproj", "{98F3F381-BB67-4667-B1B4-783E59182479}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Services.Book.Worker", "Services\Workers\Bookstore.Services.Book.Worker\Bookstore.Services.Book.Worker.csproj", "{2F865864-B753-438E-B463-4AD01D9CC4A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookstore.Services.Book", "Services\Bookstore.Services.Book\Bookstore.Services.Book.csproj", "{5D58A919-CAF3-4CB7-9E4E-CAF35D93DB40}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -95,6 +101,18 @@ Global
 		{487E18E7-8B92-4B47-9029-9146B07EDD30}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{487E18E7-8B92-4B47-9029-9146B07EDD30}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{487E18E7-8B92-4B47-9029-9146B07EDD30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98F3F381-BB67-4667-B1B4-783E59182479}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98F3F381-BB67-4667-B1B4-783E59182479}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98F3F381-BB67-4667-B1B4-783E59182479}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98F3F381-BB67-4667-B1B4-783E59182479}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F865864-B753-438E-B463-4AD01D9CC4A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F865864-B753-438E-B463-4AD01D9CC4A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F865864-B753-438E-B463-4AD01D9CC4A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F865864-B753-438E-B463-4AD01D9CC4A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D58A919-CAF3-4CB7-9E4E-CAF35D93DB40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D58A919-CAF3-4CB7-9E4E-CAF35D93DB40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D58A919-CAF3-4CB7-9E4E-CAF35D93DB40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D58A919-CAF3-4CB7-9E4E-CAF35D93DB40}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -114,6 +132,9 @@ Global
 		{DD029BF4-2104-4807-A921-BCDEE7E65EDD} = {B3310607-5A3D-4B45-A2E3-83C30118D468}
 		{D6AC2F76-179D-4281-B2D1-03208F2C5AA6} = {8583E291-278B-4141-8847-CCC239919298}
 		{487E18E7-8B92-4B47-9029-9146B07EDD30} = {8583E291-278B-4141-8847-CCC239919298}
+		{98F3F381-BB67-4667-B1B4-783E59182479} = {B3310607-5A3D-4B45-A2E3-83C30118D468}
+		{2F865864-B753-438E-B463-4AD01D9CC4A3} = {2034E124-512D-4B9D-B9BE-8D92BE381852}
+		{5D58A919-CAF3-4CB7-9E4E-CAF35D93DB40} = {2BD175A2-BFF6-4000-82DE-1B4190100599}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {71C95C0C-1026-482E-9377-81F81B25FB97}
