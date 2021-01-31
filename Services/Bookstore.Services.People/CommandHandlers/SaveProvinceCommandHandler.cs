@@ -6,26 +6,27 @@ using System.Threading.Tasks;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Repositories;
+using MassTransit;
 using RabbitWarren;
 using RabbitWarren.ClientHandlers;
 
 namespace Bookstore.Services.People.CommandHandlers
 {
-    public class SaveProvinceCommandHandler : CommandHandlerBase<SaveProvinceCommand, SaveProvinceCommandResult>
+    public class SaveProvinceCommandHandler : IConsumer<SaveProvinceCommand>
     {
         private readonly ICountryRepository _countries;
 
-        public SaveProvinceCommandHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, ICountryRepository countries) : base(connection, mqOptions)
+        public SaveProvinceCommandHandler(ICountryRepository countries)
         {
             _countries = countries;
         }
 
-        public override async Task<SaveProvinceCommandResult> Handle(SaveProvinceCommand request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<SaveProvinceCommand> context)
         {
-            var result = new SaveProvinceCommandResult {CorrelationId = request.Id};
+            var result = new SaveProvinceCommandResult();
             try
             {
-                var province = await _countries.SaveProvince(request.Province);
+                var province = await _countries.SaveProvince(context.Message.Province);
                 result.Province = province;
             }
             catch (Exception ex)
@@ -33,7 +34,7 @@ namespace Bookstore.Services.People.CommandHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

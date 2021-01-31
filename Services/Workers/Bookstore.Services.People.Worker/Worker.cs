@@ -6,6 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Bookstore.Entities.People;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using RabbitWarren;
 
 namespace Bookstore.Services.Workers.People
@@ -13,22 +16,25 @@ namespace Bookstore.Services.Workers.People
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        private readonly RabbitMQConsumer _consumer;
+        private readonly IBusControl _busControl;
+        private readonly IDbContextFactory<PeopleContext> _dbFactory;
 
-        public Worker(RabbitMQConnection rmqConn, ILogger<Worker> logger)
+        public Worker(IBusControl busControl, ILogger<Worker> logger, IDbContextFactory<PeopleContext> dbFactory)
         {
             _logger = logger;
-            var consumerChannel = rmqConn.OpenConsumerChannel("rabbitwarren", "people", exclusive: false);
-            _consumer = consumerChannel.RegisterMediatRConsumer(Assembly.Load("Bookstore.Services.People"));
+            _busControl = busControl;
+            _dbFactory = dbFactory;
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _consumer.Start(autoDelete: false);
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                await Task.Delay(10000, stoppingToken);
-            }
+            var db = _dbFactory.CreateDbContext();
+            await db.Database.MigrateAsync(stoppingToken);
+            await _busControl.StartAsync(stoppingToken);
+        }
+
+        public override void Dispose()
+        {
+            Task.Run(async () => await _busControl.StopAsync());
         }
     }
 }

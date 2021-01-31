@@ -3,39 +3,52 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Autofac;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
+using MassTransit;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using NUnit.Framework;
-using RabbitWarren;
-using RabbitWarren.Messaging;
 
 namespace Bookstore.Services.People.Tests
 {
     [TestFixture]
     public class SubjectTests
     {
-        private RabbitMQConnection _rmqConnection;
-        private RabbitMQPublishChannel _publishChannel;
-        private RabbitMQConsumer _consumer;
+        private IBusControl _busControl;
+        private IRequestClient<SaveSubjectCommand> _saveSubjectClient;
+        private IRequestClient<FindSubjectsQuery> _findSubjectsClient;
+        private IRequestClient<RemoveSubjectCommand> _removeSubjectClient;
+
         private PersonFiller _personFiller;
         private CompanyFiller _companyFiller;
 
         /* start the people service worker manually first! */
         [OneTimeSetUp]
-        public void OneTimeSetUp()
+        public async Task OneTimeSetUp()
         {
             _personFiller = new PersonFiller();
             _companyFiller = new CompanyFiller();
-            var rmqFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "127.0.0.1", "people", 5672, null, new ContainerBuilder().Build(), "brian", "development");
-            _rmqConnection = rmqFactory.Create();
-            _publishChannel = _rmqConnection.OpenPublishChannel("rabbitwarren");
-            var consumerChannel = _rmqConnection.OpenConsumerChannel("", $"response.{Guid.NewGuid()}", autoDelete: true);
-            _consumer = consumerChannel.RegisterDefaultConsumer();
-            _consumer.Start();
+            _busControl = Bus.Factory.CreateUsingRabbitMq(rmq =>
+            {
+                rmq.Host(new Uri("amqp://localhost:5672/people"), host =>
+                {
+                    host.Username("brian");
+                    host.Password("development");
+                });
+            });
+            await _busControl.StartAsync();
+            _saveSubjectClient = _busControl.CreateRequestClient<SaveSubjectCommand>();
+            _findSubjectsClient = _busControl.CreateRequestClient<FindSubjectsQuery>();
+            _removeSubjectClient = _busControl.CreateRequestClient<RemoveSubjectCommand>();
+        }
+
+        [OneTimeTearDown]
+        public async Task OneTimeTearDown()
+        {
+            await _busControl.StopAsync();
         }
 
         [Test]
@@ -43,28 +56,22 @@ namespace Bookstore.Services.People.Tests
         {
             var person = _personFiller.FillPerson();
             var saveCommand = new SaveSubjectCommand {Subject = person};
-            var saveResult = await _publishChannel.Request(saveCommand, "people", _consumer.Channel.Queue);
-            if (!(saveResult is SaveSubjectCommandResult personResult)) Assert.Fail("Invalid response received to SaveSubject() request");
-            else
-            {
-                if (personResult.Error != null) Assert.Fail(personResult.Error);
-                var subject = personResult.Subject;
-                Assert.NotNull(subject);
-                Assert.AreNotSame(subject, person);
-                Assert.AreEqual(person.Id, subject.Id);
-            }
+            var saveResponse =
+                await _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(saveCommand);
+            var personResult = saveResponse.Message;
+            if (personResult.Error != null) Assert.Fail(personResult.Error);
+            Assert.NotNull(personResult.Subject);
+            Assert.AreNotSame(personResult.Subject, person);
+            Assert.AreEqual(person.Id, personResult.Subject.Id);
             var company = _companyFiller.FillCompany();
             saveCommand = new SaveSubjectCommand {Subject = company};
-            saveResult = await _publishChannel.Request(saveCommand, "people", _consumer.Channel.Queue);
-            if (!(saveResult is SaveSubjectCommandResult companyResult)) Assert.Fail("Invalid response received to SaveSubject() request");
-            else
-            {
-                if (companyResult.Error != null) Assert.Fail(companyResult.Error);
-                var subject = companyResult.Subject;
-                Assert.NotNull(subject);
-                Assert.AreNotSame(company, subject);
-                Assert.AreEqual(company, subject);
-            }
+            saveResponse =
+                await _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(saveCommand);
+            if (saveResponse.Message.Error != null) Assert.Fail(saveResponse.Message.Error);
+            var subject = saveResponse.Message.Subject;
+            Assert.NotNull(subject);
+            Assert.AreNotSame(company, subject);
+            Assert.AreEqual(company, subject);
         }
 
         [Test]
@@ -75,82 +82,64 @@ namespace Bookstore.Services.People.Tests
             var company = _companyFiller.FillCompany();
             var savePersonCommand = new SaveSubjectCommand {Subject = person};
             var saveCompanyCommand = new SaveSubjectCommand {Subject = company};
-            var savePersonTask = _publishChannel.Request(savePersonCommand, "people", _consumer.Channel.Queue);
-            var saveCompanyTask = _publishChannel.Request(saveCompanyCommand, "people", _consumer.Channel.Queue);
+            var savePersonTask = _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(savePersonCommand);
+            var saveCompanyTask = _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(saveCompanyCommand);
 
             // since we can, we'll test parallel commands and queries
             await Task.WhenAll(savePersonTask, saveCompanyTask);
 
             // verify test data creation
-            var savePersonMessage = savePersonTask.Result;
-            var saveCompanyMessage = saveCompanyTask.Result;
-            if (savePersonMessage is ErrorResult personError)
-                Assert.Fail(personError.Error);
-            if (savePersonMessage is SaveSubjectCommandResult savePersonResult)
-            {
-                if (savePersonResult.Error != null) Assert.Fail(savePersonResult.Error);
-                if (!savePersonResult.Success) Assert.Fail("Unable to save test person data");
-                person = (Person) savePersonResult.Subject;
-            }
-            if (saveCompanyMessage is ErrorResult companyError)
-                Assert.Fail(companyError.Error);
-            if (saveCompanyMessage is SaveSubjectCommandResult companyResult)
-            {
-                if (companyResult.Error != null) Assert.Fail(companyResult.Error);
-                if (!companyResult.Success) Assert.Fail("Unable to save test company data");
-                company = (Company) companyResult.Subject;
-            }
+            var savePersonMessage = savePersonTask.Result.Message;
+            var saveCompanyMessage = saveCompanyTask.Result.Message;
+            if (savePersonMessage.Error != null) Assert.Fail(savePersonMessage.Error);
+            if (!savePersonMessage.Success) Assert.Fail("Unable to save test person data");
+            person = (Person) savePersonMessage.Subject;
+            if (saveCompanyMessage.Error != null) Assert.Fail(saveCompanyMessage.Error);
+            if (!saveCompanyMessage.Success) Assert.Fail("Unable to save test company data");
+            company = (Company) saveCompanyMessage.Subject;
 
             // verify that we can retrieve both a person and a company, and that retrieving all subjects returns both people and companies
             var findAllQuery = new FindSubjectsQuery();
             var findPersonQuery = new FindSubjectsQuery {SubjectId = person.Id};
             var findCompanyQuery = new FindSubjectsQuery {SubjectId = company.Id};
-            var findAllTask = _publishChannel.Request(findAllQuery, "people", _consumer.Channel.Queue);
-            var findPersonTask = _publishChannel.Request(findPersonQuery, "people", _consumer.Channel.Queue);
-            var findCompanyTask = _publishChannel.Request(findCompanyQuery, "people", _consumer.Channel.Queue);
+            var findAllTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findAllQuery);
+            var findPersonTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findPersonQuery);
+            var findCompanyTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findCompanyQuery);
 
             // parallel again
             await Task.WhenAll(findAllTask, findPersonTask, findCompanyTask);
 
-            var findAllMessage = findAllTask.Result;
-            var findPersonMessage = findPersonTask.Result;
-            var findCompanyMessage = findCompanyTask.Result;
+            var findAllMessage = findAllTask.Result.Message;
+            var findPersonMessage = findPersonTask.Result.Message;
+            var findCompanyMessage = findCompanyTask.Result.Message;
+            ;
 
             // check for errors
-            if (findAllMessage is ErrorResult findAllError)
-                Assert.Fail(findAllError.Error);
-            if (findPersonMessage is ErrorResult findPersonError)
-                Assert.Fail(findPersonError.Error);
-            if (findCompanyMessage is ErrorResult findCompanyError)
-                Assert.Fail(findCompanyError.Error);
+            if (findAllMessage.Error != null)
+                Assert.Fail(findAllMessage.Error);
+            if (findPersonMessage.Error != null)
+                Assert.Fail(findPersonMessage.Error);
+            if (findCompanyMessage.Error != null)
+                Assert.Fail(findCompanyMessage.Error);
 
             // verify that find subjects returns both people and companies
-            if (findAllMessage is FindSubjectsQueryResult findAllResult)
-            {
-                if (findAllResult.Error != null)
-                    Assert.Fail(findAllResult.Error);
-                Assert.IsTrue(findAllResult.Results.Contains(person));
-                Assert.IsTrue(findAllResult.Results.Contains(company));
-            }
-
+            if (findAllMessage.Error != null)
+                Assert.Fail(findAllMessage.Error);
+            Assert.IsTrue(findAllMessage.Results.Contains(person));
+            Assert.IsTrue(findAllMessage.Results.Contains(company));
+                
             // verify that if a subject is a person, a Person object is returned
-            if (findPersonMessage is FindSubjectsQueryResult findPersonResult)
-            {
-                if (findPersonResult.Error != null)
-                    Assert.Fail(findPersonResult.Error);
-                Assert.IsTrue(findPersonResult.Results.Count == 1);
-                // AreEqual() will also ensure that the result is of the correct type, since a generic Subject can't be equal to a Person
-                Assert.AreEqual(person, findPersonResult.Results.Single());
-            }
+            if (findPersonMessage.Error != null)
+                Assert.Fail(findPersonMessage.Error);
+            Assert.IsTrue(findPersonMessage.Results.Count == 1);
+            // AreEqual() will also ensure that the result is of the correct type, since a generic Subject can't be equal to a Person
+            Assert.AreEqual(person, findPersonMessage.Results.Single());
 
             // verify that if a subject is a company, a Company object is returned
-            if (findCompanyMessage is FindSubjectsQueryResult findCompanyResult)
-            {
-                if (findCompanyResult.Error != null)
-                    Assert.Fail(findCompanyResult.Error);
-                Assert.IsTrue(findCompanyResult.Results.Count == 1);
-                Assert.AreEqual(company, findCompanyResult.Results.Single());
-            }
+            if (findCompanyMessage.Error != null)
+                Assert.Fail(findCompanyMessage.Error);
+            Assert.IsTrue(findCompanyMessage.Results.Count == 1);
+            Assert.AreEqual(company, findCompanyMessage.Results.Single());
         }
 
         [Test]
@@ -160,58 +149,26 @@ namespace Bookstore.Services.People.Tests
             var company = _companyFiller.FillCompany();
             var savePersonCommand = new SaveSubjectCommand {Subject = person};
             var saveCompanyCommand = new SaveSubjectCommand {Subject = company};
-            var savePersonTask = _publishChannel.Request(savePersonCommand, "people", _consumer.Channel.Queue);
-            var saveCompanyTask = _publishChannel.Request(saveCompanyCommand, "people", _consumer.Channel.Queue);
+            var savePersonTask = _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(savePersonCommand);
+            var saveCompanyTask = _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(saveCompanyCommand);
             await Task.WhenAll(savePersonTask, saveCompanyTask);
-            var savePersonResponse = savePersonTask.Result;
-            var saveCompanyResponse = saveCompanyTask.Result;
-            if (savePersonResponse is ErrorResult savePersonError)
-                Assert.Fail(savePersonError.Error);
-            if (saveCompanyResponse is ErrorResult saveCompanyError)
-                Assert.Fail(saveCompanyError.Error);
-            if (savePersonResponse is SaveSubjectCommandResult savePersonResult)
-                person = savePersonResult.Subject as Person;
+            var savePersonMessage = savePersonTask.Result.Message;
+            var saveCompanyMessage = saveCompanyTask.Result.Message;
+            person = (Person) savePersonMessage.Subject;
+            company = (Company) saveCompanyMessage.Subject;
             Assert.NotNull(person);
-            if (saveCompanyResponse is SaveSubjectCommandResult saveCompanyResult)
-                company = saveCompanyResult.Subject as Company;
             Assert.NotNull(company);
             var removePersonCommand = new RemoveSubjectCommand {SubjectId = person.Id};
             var removeCompanyCommand = new RemoveSubjectCommand {SubjectId = company.Id};
-            var removePersonTask = _publishChannel.Request(removePersonCommand, "people", _consumer.Channel.Queue);
-            var removeCompanyTask = _publishChannel.Request(removeCompanyCommand, "people", _consumer.Channel.Queue);
+            var removePersonTask = _removeSubjectClient.GetResponse<RemoveSubjectCommandResult>(removePersonCommand);
+            var removeCompanyTask = _removeSubjectClient.GetResponse<RemoveSubjectCommandResult>(removeCompanyCommand);
             await Task.WhenAll(removePersonTask, removeCompanyTask);
-            var removePersonResponse = removePersonTask.Result;
-            var removeCompanyResponse = removeCompanyTask.Result;
-            switch (removeCompanyResponse)
-            {
-                case ErrorResult removeCompanyError:
-                    Assert.Fail(removeCompanyError.Error);
-                    break;
-                case RemoveSubjectCommandResult removeCompanyResult:
-                    Assert.IsTrue(removeCompanyResult.Success);
-                    break;
-                default:
-                    Assert.Fail("Unknown response type received to remove company command");
-                    break;
-            }
-            switch (removePersonResponse)
-            {
-                case ErrorResult removePersonError:
-                    Assert.Fail(removePersonError.Error);
-                    break;
-                case RemoveSubjectCommandResult removePersonResult:
-                    Assert.IsTrue(removePersonResult.Success);
-                    break;
-                default:
-                    Assert.Fail("Unknown response type received to remove person command");
-                    break;
-            }
-        }
-
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
-        {
-            _rmqConnection.Close();
+            var removePersonMessage = removePersonTask.Result.Message;
+            var removeCompanyMessage = removeCompanyTask.Result.Message;
+            if (removePersonMessage.Error != null) Assert.Fail(removePersonMessage.Error);
+            if (removeCompanyMessage.Error != null) Assert.Fail(removeCompanyMessage.Error);
+            Assert.IsTrue(removePersonMessage.Success);
+            Assert.IsTrue(removeCompanyMessage.Success);
         }
     }
 }

@@ -7,28 +7,29 @@ using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
+using MassTransit;
 using RabbitWarren;
 using RabbitWarren.ClientHandlers;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
-    public class FindPeopleQueryHandler : QueryHandlerBase<FindPeopleQuery, FindPeopleQueryResult, Person>
+    public class FindPeopleQueryHandler : IConsumer<FindPeopleQuery>
     {
         private readonly IPersonRepository _people;
 
-        public FindPeopleQueryHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, IPersonRepository people) : base(connection, mqOptions)
+        public FindPeopleQueryHandler(IPersonRepository people)
         {
             _people = people;
         }
 
-        public override async Task<FindPeopleQueryResult> Handle(FindPeopleQuery request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<FindPeopleQuery> context)
         {
-            var result = new FindPeopleQueryResult {CorrelationId = request.Id, Results = new List<Person>()};
+            var result = new FindPeopleQueryResult {Results = new List<Person>()};
             try
             {
-                if (request.PersonId.HasValue)
+                if (context.Message.PersonId.HasValue)
                 {
-                    var person = await _people.FindPersonById(request.PersonId.Value);
+                    var person = await _people.FindPersonById(context.Message.PersonId.Value);
                     if (person != null)
                         result.Results.Add(person);
                 }
@@ -43,7 +44,7 @@ namespace Bookstore.Services.People.QueryHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

@@ -6,33 +6,34 @@ using System.Threading.Tasks;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Repositories;
+using MassTransit;
 using RabbitWarren;
 using RabbitWarren.ClientHandlers;
 
 namespace Bookstore.Services.People.CommandHandlers
 {
-    public class RemoveCountryCommandHandler : CommandHandlerBase<RemoveCountryCommand, RemoveCountryCommandResult>
+    public class RemoveCountryCommandHandler : IConsumer<RemoveCountryCommand>
     {
         private readonly ICountryRepository _countries;
 
-        public RemoveCountryCommandHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, ICountryRepository countries) : base(connection, mqOptions)
+        public RemoveCountryCommandHandler(ICountryRepository countries)
         {
             _countries = countries;
         }
 
-        public override async Task<RemoveCountryCommandResult> Handle(RemoveCountryCommand request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<RemoveCountryCommand> context)
         {
-            var result = new RemoveCountryCommandResult {CorrelationId = request.Id};
+            var result = new RemoveCountryCommandResult();
             try
             {
-                result.Success = await _countries.RemoveCountry(request.CountryId);
+                result.Success = await _countries.RemoveCountry(context.Message.CountryId);
             }
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

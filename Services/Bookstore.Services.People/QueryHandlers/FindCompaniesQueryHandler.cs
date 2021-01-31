@@ -7,28 +7,27 @@ using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
-using RabbitWarren;
-using RabbitWarren.ClientHandlers;
+using MassTransit;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
-    public class FindCompaniesQueryHandler : QueryHandlerBase<FindCompaniesQuery, FindCompaniesQueryResult, Company>
+    public class FindCompaniesQueryHandler : IConsumer<FindCompaniesQuery>
     {
         private readonly ICompanyRepository _companies;
 
-        public FindCompaniesQueryHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, ICompanyRepository companies) : base(connection, mqOptions)
+        public FindCompaniesQueryHandler(ICompanyRepository companies)
         {
             _companies = companies;
         }
 
-        public override async Task<FindCompaniesQueryResult> Handle(FindCompaniesQuery request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<FindCompaniesQuery> context)
         {
-            var result = new FindCompaniesQueryResult {CorrelationId = request.Id, Results = new List<Company>()};
+            var result = new FindCompaniesQueryResult { Results = new List<Company>() } ;
             try
             {
-                if (request.CompanyId.HasValue)
+                if (context.Message.CompanyId.HasValue)
                 {
-                    var company = await _companies.FindCompanyById(request.CompanyId.Value);
+                    var company = await _companies.FindCompanyById(context.Message.CompanyId.Value);
                     if (company != null)
                         result.Results.Add(company);
                 }
@@ -43,7 +42,7 @@ namespace Bookstore.Services.People.QueryHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

@@ -3,204 +3,195 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Autofac;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
+using GreenPipes;
+using MassTransit;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
-using RabbitWarren;
-using RabbitWarren.Messaging;
 using Tynamix.ObjectFiller;
 
 namespace Bookstore.Services.People.Tests
 {
     public class CountryTests
     {
-        private RabbitMQConnection _rmqConnection;
-        private RabbitMQPublishChannel _publishChannel;
-        private RabbitMQConsumer _consumer;
+        private IBusControl _busControl;
         private Filler<Country> _countryFiller;
         private Filler<Province> _provinceFiller;
-
+        private IRequestClient<SaveCountryCommand> _saveCountryClient;
+        private IRequestClient<FindCountriesQuery> _findCountriesClient;
+        private IRequestClient<RemoveCountryCommand> _removeCountryClient;
+        private IRequestClient<SaveProvinceCommand> _saveProvinceClient;
+        private IRequestClient<FindProvincesQuery> _findProvincesClient;
+        private IRequestClient<RemoveProvinceCommand> _removeProvinceClient;
+        
         [OneTimeSetUp]
-        public void OneTimeSetUp()
+        public async Task OneTimeSetUp()
         {
             _countryFiller = new Filler<Country>();
             _provinceFiller = new Filler<Province>();
-            var rmqFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "127.0.0.1", "people", 5672, null,
-                new ContainerBuilder().Build(), "brian", "development");
-            _rmqConnection = rmqFactory.Create();
-            _publishChannel = _rmqConnection.OpenPublishChannel("rabbitwarren");
-            var consumerChannel =
-                _rmqConnection.OpenConsumerChannel("", $"response.{Guid.NewGuid()}", autoDelete: true);
-            _consumer = consumerChannel.RegisterDefaultConsumer();
-            _consumer.Start();
+            _busControl = Bus.Factory.CreateUsingRabbitMq(rmq =>
+            {
+                rmq.Host(new Uri("amqp://localhost:5672/people"), host =>
+                {
+                    host.Username("brian");
+                    host.Password("development");
+                });
+            });
+            _saveCountryClient = _busControl.CreateRequestClient<SaveCountryCommand>();
+            _findCountriesClient = _busControl.CreateRequestClient<FindCountriesQuery>();
+            _removeCountryClient = _busControl.CreateRequestClient<RemoveCountryCommand>();
+            _saveProvinceClient = _busControl.CreateRequestClient<SaveProvinceCommand>();
+            _findProvincesClient = _busControl.CreateRequestClient<FindProvincesQuery>();
+            _removeProvinceClient = _busControl.CreateRequestClient<RemoveProvinceCommand>();       
+            await _busControl.StartAsync();
+        }
+
+        [OneTimeTearDown]
+        public async Task OneTimeTearDown()
+        {
+            await _busControl.StopAsync();
         }
 
         [Test]
         public async Task TestSave()
         {
-            var country = _countryFiller.Create();
-            var saveCountryCommand = new SaveCountryCommand {Country = country};
-            var saveCountryResponse =
-                await _publishChannel.Request(saveCountryCommand, "people", _consumer.Channel.Queue);
-            if (saveCountryResponse is ErrorResult saveCountryError)
-                Assert.Fail(saveCountryError.Error);
-            if (!(saveCountryResponse is SaveCountryCommandResult saveCountryResult))
-                Assert.Fail("Unknown response received to save country command");
-            else
+            try
             {
+                var country = _countryFiller.Create();
+                var saveCountryCommand = new SaveCountryCommand {Country = country};
+                var saveCountryResponse =
+                    await _saveCountryClient.GetResponse<SaveCountryCommandResult>(saveCountryCommand);
+                var saveCountryResult = saveCountryResponse.Message;
                 Assert.AreNotSame(country, saveCountryResult.Country);
                 Assert.AreEqual(country, saveCountryResult.Country);
                 country = saveCountryResult.Country;
-            }
-
-            var province = _provinceFiller.Create();
-            province.Country = country;
-            var saveProvinceCommand = new SaveProvinceCommand {Province = province};
-            var saveProvinceResponse =
-                await _publishChannel.Request(saveProvinceCommand, "people", _consumer.Channel.Queue);
-            if (saveProvinceResponse is ErrorResult saveProvinceError)
-                Assert.Fail(saveProvinceError.Error);
-            if (!(saveProvinceResponse is SaveProvinceCommandResult saveProvinceResult))
-                Assert.Fail("Unknown response received to save province command");
-            else
-            {
+                var province = _provinceFiller.Create();
+                province.Country = country;
+                var saveProvinceCommand = new SaveProvinceCommand {Province = province};
+                var saveProvinceResponse =
+                    await _saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvinceCommand);
+                var saveProvinceResult = saveProvinceResponse.Message;
                 Assert.AreNotSame(province, saveProvinceResult.Province);
                 Assert.AreEqual(province, saveProvinceResult.Province);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail(ex.Message);
             }
         }
 
         [Test]
         public async Task TestFind()
         {
-            var country = _countryFiller.Create();
-            var saveCountryCommand = new SaveCountryCommand {Country = country};
-            var response = await _publishChannel.Request(saveCountryCommand, "people", _consumer.Channel.Queue);
-            if (response is ErrorResult createCountryError)
-                Assert.Fail(createCountryError.Error);
-            var province = _provinceFiller.Create();
-            province.Country = country;
-            var saveProvinceCommand = new SaveProvinceCommand {Province = province};
-            response = await _publishChannel.Request(saveProvinceCommand, "people", _consumer.Channel.Queue);
-            if (response is ErrorResult createProvince1Error)
-                Assert.Fail(createProvince1Error.Error);
-            Province province1 = null;
-            Province province2 = null;
-            if (response is SaveProvinceCommandResult createProvince1Result)
-                province1 = createProvince1Result.Province;
-            province = _provinceFiller.Create();
-            province.Country = country;
-            saveProvinceCommand = new SaveProvinceCommand {Province = province};
-            response = await _publishChannel.Request(saveProvinceCommand, "people", _consumer.Channel.Queue);
-            if (response is ErrorResult createProvince2Error)
-                Assert.Fail(createProvince2Error.Error);
-            if (response is SaveProvinceCommandResult createProvince2Result)
-                province2 = createProvince2Result.Province;
-            var findCountryQuery = new FindCountriesQuery {CountryId = country.Id};
-            Country foundCountry = null;
-            response = await _publishChannel.Request(findCountryQuery, "people", _consumer.Channel.Queue);
-            if (response is ErrorResult findCountryError)
-                Assert.Fail(findCountryError.Error);
-            if (response is FindCountriesQueryResult findCountryResult)
+            try
             {
+                var country = _countryFiller.Create();
+                var saveCountryCommand = new SaveCountryCommand {Country = country};
+                var saveCountryResponse =
+                    await _saveCountryClient.GetResponse<SaveCountryCommandResult>(saveCountryCommand);
+                country = saveCountryResponse.Message.Country;
+                var province = _provinceFiller.Create();
+                province.Country = country;
+                var saveProvinceCommand = new SaveProvinceCommand {Province = province};
+                var saveProvinceResponse =
+                    await _saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvinceCommand);
+                var province1 = saveProvinceResponse.Message.Province;
+                province = _provinceFiller.Create();
+                province.Country = country;
+                saveProvinceCommand = new SaveProvinceCommand {Province = province};
+                saveProvinceResponse = 
+                    await _saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvinceCommand);
+                var province2 = saveProvinceResponse.Message.Province;
+                var findCountryQuery = new FindCountriesQuery {CountryId = country.Id};
+                var findCountryResponse =
+                    await _findCountriesClient.GetResponse<FindCountriesQueryResult>(findCountryQuery);
+                var findCountryResult = findCountryResponse.Message;
+                Country foundCountry = null;
                 Assert.AreEqual(1, findCountryResult.Results.Count);
                 foundCountry = findCountryResult.Results.Single();
-            }
-            Assert.AreNotSame(country, foundCountry);
-            Assert.AreEqual(country, foundCountry);
-            var findProvinceQuery = new FindProvincesQuery {ProvinceId = province1?.Id};
-            response = await _publishChannel.Request(findProvinceQuery, "people", _consumer.Channel.Queue);
-            Province foundProvince = null;
-            if (response is ErrorResult findProvinceError)
-                Assert.Fail(findProvinceError.Error);
-            if (response is FindProvincesQueryResult findProvinceResult)
-            {
+                Assert.AreNotSame(country, foundCountry);
+                Assert.AreEqual(country, foundCountry);
+                var findProvinceQuery = new FindProvincesQuery {ProvinceId = province1?.Id};
+                var findProvinceResponse =
+                    await _findProvincesClient.GetResponse<FindProvincesQueryResult>(findProvinceQuery);
+                var findProvinceResult = findProvinceResponse.Message;
                 Assert.AreEqual(1, findProvinceResult.Results.Count);
-                foundProvince = findProvinceResult.Results.Single();
+                var foundProvince = findProvinceResult.Results.Single();
+                Assert.NotNull(foundProvince);
+                Assert.AreNotSame(province1, foundProvince);
+                Assert.AreEqual(province1, foundProvince);
+                var findProvincesQuery = new FindProvincesQuery {CountryId = country.Id};
+                var findProvincesResponse =
+                    await _findProvincesClient.GetResponse<FindProvincesQueryResult>(findProvincesQuery);
+                var findProvincesResult = findProvincesResponse.Message;
+                var foundProvinces = findProvincesResult.Results;
+                Assert.NotNull(foundProvinces);
+                Assert.IsTrue(foundProvinces.Contains(province1));
+                Assert.IsTrue(foundProvinces.Contains(province2));
             }
-            Assert.NotNull(foundProvince);
-            Assert.AreNotSame(province1, foundProvince);
-            Assert.AreEqual(province1, foundProvince);
-            var findProvincesQuery = new FindProvincesQuery {CountryId = country.Id};
-            response = await _publishChannel.Request(findProvincesQuery, "people", _consumer.Channel.Queue);
-            IList<Province> foundProvinces = null;
-            if (response is FindProvincesQueryResult findProvincesResult)
-                foundProvinces = findProvincesResult.Results;
-            Assert.NotNull(foundProvinces);
-            Assert.IsTrue(foundProvinces.Contains(province1));
-            Assert.IsTrue(foundProvinces.Contains(province2));
+            catch (Exception ex)
+            {
+                Assert.Fail(ex.Message);
+            }
         }
 
         [Test]
         public async Task TestRemove()
         {
+            var saveCountryClient = _busControl.CreateRequestClient<SaveCountryCommand>();
+            var saveProvinceClient = _busControl.CreateRequestClient<SaveProvinceCommand>();
+            var removeCountryClient = _busControl.CreateRequestClient<RemoveCountryCommand>();
+            var removeProvinceClient = _busControl.CreateRequestClient<RemoveProvinceCommand>();
+            var findProvinceClient = _busControl.CreateRequestClient<FindProvincesQuery>();
+            var findCountryClient = _busControl.CreateRequestClient<FindCountriesQuery>();
             var country = _countryFiller.Create();
             var saveCountryCommand = new SaveCountryCommand {Country = country};
-            var response = await _publishChannel.Request(saveCountryCommand, "people", _consumer.Channel.Queue);
-            if (response is ErrorResult createCountryError)
-                Assert.Fail(createCountryError.Error);
+            var saveCountryResponse =
+                await saveCountryClient.GetResponse<SaveCountryCommandResult>(saveCountryCommand);
+            country = saveCountryResponse.Message.Country;
             var province1 = _provinceFiller.Create();
             var province2 = _provinceFiller.Create();
             province1.Country = country;
             province2.Country = country;
             var saveProvince1Command = new SaveProvinceCommand {Province = province1};
             var saveProvince2Command = new SaveProvinceCommand {Province = province2};
-            var saveProvince1Task = _publishChannel.Request(saveProvince1Command, "people", _consumer.Channel.Queue);
-            var saveProvince2Task = _publishChannel.Request(saveProvince2Command, "people", _consumer.Channel.Queue);
+            var saveProvince1Task = saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvince1Command);
+            var saveProvince2Task = saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvince2Command);
             await Task.WhenAll(saveProvince1Task, saveProvince2Task);
             var saveProvince1Response = saveProvince1Task.Result;
             var saveProvince2Response = saveProvince2Task.Result;
-            if (saveProvince1Response is ErrorResult saveProvince1Error)
-                Assert.Fail(saveProvince1Error.Error);
-            if (saveProvince2Response is ErrorResult saveProvince2Error)
-                Assert.Fail(saveProvince2Error.Error);
-            if (saveProvince1Response is SaveProvinceCommandResult saveProvince1Result)
-                province1 = saveProvince1Result.Province;
-            if (saveProvince2Response is SaveProvinceCommandResult saveProvince2Result)
-                province2 = saveProvince2Result.Province;
+            province1 = saveProvince1Response.Message.Province;
+            province2 = saveProvince2Response.Message.Province;
 
             // remove province 2 by itself
             var removeProvince2Command = new RemoveProvinceCommand {ProvinceId = province2.Id};
-            var removeProvince2Response = await _publishChannel.Request(removeProvince2Command, "people", _consumer.Channel.Queue);
-            if (removeProvince2Response is ErrorResult removeProvince2Error)
-                Assert.Fail(removeProvince2Error.Error);
-            if (removeProvince2Response is RemoveProvinceCommandResult removeProvince2Result)
-                Assert.IsTrue(removeProvince2Result.Success);
+            var removeProvince2Response =
+                await removeProvinceClient.GetResponse<RemoveProvinceCommandResult>(removeProvince2Command);
+            Assert.IsTrue(removeProvince2Response.Message.Success);
             var findProvince2Query = new FindProvincesQuery {ProvinceId = province2.Id};
-            var findProvince2Response = await _publishChannel.Request(findProvince2Query, "people", _consumer.Channel.Queue);
-            if (findProvince2Response is ErrorResult findProvince2Error)
-                Assert.Fail(findProvince2Error.Error);
-            if (findProvince2Response is FindProvincesQueryResult findProvince2Result)
-                Assert.AreEqual(0, findProvince2Result.Results.Count);
+            var findProvince2Response =
+                await findProvinceClient.GetResponse<FindProvincesQueryResult>(findProvince2Query);
+            Assert.AreEqual(0, findProvince2Response.Message.Results.Count);
 
             // province 1 should be deleted when country is deleted
             var removeCountryCommand = new RemoveCountryCommand {CountryId = country.Id};
-            var removeCountryResponse = await _publishChannel.Request(removeCountryCommand, "people", _consumer.Channel.Queue);
-            if (removeCountryResponse is ErrorResult removeCountryError)
-                Assert.Fail(removeCountryError.Error);
-            if (removeCountryResponse is RemoveCountryCommandResult removeCountryResult)
-                Assert.IsTrue(removeCountryResult.Success);
+            var removeCountryResponse =
+                await removeCountryClient.GetResponse<RemoveCountryCommandResult>(removeCountryCommand);
             var findCountryQuery = new FindCountriesQuery {CountryId = country.Id};
             var findProvince1Query = new FindProvincesQuery {ProvinceId = province1.Id};
-            var findCountryTask = _publishChannel.Request(findCountryQuery, "people", _consumer.Channel.Queue);
-            var findProvince1Task = _publishChannel.Request(findProvince1Query, "people", _consumer.Channel.Queue);
+            var findCountryTask = findCountryClient.GetResponse<FindCountriesQueryResult>(findCountryQuery);
+            var findProvince1Task = findProvinceClient.GetResponse<FindProvincesQueryResult>(findProvince1Query);
             await Task.WhenAll(findCountryTask, findProvince1Task);
             var findCountryResponse = findCountryTask.Result;
             var findProvince1Response = findProvince1Task.Result;
-            if (findCountryResponse is ErrorResult findCountryError)
-                Assert.Fail(findCountryError.Error);
-            if (findProvince1Response is ErrorResult findProvince1Error)
-                Assert.Fail(findProvince1Error.Error);
-            if (findCountryResponse is FindCountriesQueryResult findCountryResult)
-                Assert.AreEqual(0, findCountryResult.Results.Count);
-            if (findProvince1Response is FindProvincesQueryResult findProvince1Result)
-                Assert.AreEqual(0, findProvince1Result.Results.Count);
+            Assert.AreEqual(0, findCountryResponse.Message.Results.Count);
+            Assert.AreEqual(0, findProvince1Response.Message.Results.Count);
         }
     }
 }

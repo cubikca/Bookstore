@@ -7,30 +7,31 @@ using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Repositories;
+using MassTransit;
 using RabbitWarren;
 using RabbitWarren.ClientHandlers;
 
 namespace Bookstore.Services.People.CommandHandlers
 {
-    public class RemoveSubjectCommandHandler : CommandHandlerBase<RemoveSubjectCommand, RemoveSubjectCommandResult>
+    public class RemoveSubjectCommandHandler : IConsumer<RemoveSubjectCommand>
     {
         private readonly IPersonRepository _people;
         private readonly ICompanyRepository _companies;
         private readonly ISubjectRepository _subjects;
 
-        public RemoveSubjectCommandHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, ISubjectRepository subjects, IPersonRepository people, ICompanyRepository companies) : base(connection, mqOptions)
+        public RemoveSubjectCommandHandler(ISubjectRepository subjects, IPersonRepository people, ICompanyRepository companies)
         {
             _people = people;
             _subjects = subjects;
             _companies = companies;
         }
 
-        public override async Task<RemoveSubjectCommandResult> Handle(RemoveSubjectCommand request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<RemoveSubjectCommand> context)
         {
-            var result = new RemoveSubjectCommandResult {CorrelationId = request.Id};
+            var result = new RemoveSubjectCommandResult();
             try
             {
-                var subject = await _subjects.FindSubjectById(request.SubjectId);
+                var subject = await _subjects.FindSubjectById(context.Message.SubjectId);
                 if (subject != null)
                 {
                     if (subject is Company company)
@@ -44,7 +45,7 @@ namespace Bookstore.Services.People.CommandHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

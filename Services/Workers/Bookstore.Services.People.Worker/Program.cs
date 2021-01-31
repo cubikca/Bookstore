@@ -14,6 +14,8 @@ using Bookstore.Domains.People.Repositories;
 using Bookstore.Entities.People;
 using Bookstore.Entities.People.AutoMapper;
 using Bookstore.Entities.People.Repositories;
+using Bookstore.Services.People.CommandHandlers;
+using MassTransit;
 using MediatR;
 using MediatR.Extensions.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -24,27 +26,19 @@ namespace Bookstore.Services.Workers.People
 {
     public class Program
     {
-        private static RabbitMQConnectionFactory RabbitMQConnectionFactory;
-
         public static async Task Main(string[] args)
         {
-            RabbitMQConnectionFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "localhost", "people", 5672, null, null, "brian", "development");
-            RabbitMQConnectionFactory.ServiceContainer = BuildServiceContainer();
-            var dbFactory = RabbitMQConnectionFactory.ServiceContainer.Resolve<IDbContextFactory<PeopleContext>>();
-            await using var db = dbFactory.CreateDbContext();
-            await db.Database.MigrateAsync();
             await CreateHostBuilder(args).Build().RunAsync();
         }
 
-        private static IContainer BuildServiceContainer()
+        private static void BuildServiceContainer(IServiceCollection services)
         {
-            var builder = new ContainerBuilder();
-            var services = new ServiceCollection();
-            // any dependencies for mediatr handlers (e.g. repositories, dbcontext, automapper) go here
+            services.AddLogging(cfg => cfg.AddConsole());
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
                 opt.UseSqlServer("Data Source=localhost;User Id=brian;Password=development;Initial Catalog=PeopleDevelopment");
+                opt.EnableSensitiveDataLogging();
             });
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
@@ -56,44 +50,29 @@ namespace Bookstore.Services.Workers.People
             });
             var mapper = mapperConfig.CreateMapper();
             services.AddSingleton(mapper);
-            services.AddSingleton(RabbitMQConnectionFactory);
-            services.AddSingleton(new RabbitMQOptions
+            services.AddMassTransit(mt =>
             {
-                Exchange = "rabbitwarren",
-                EventQueue = "people",
-                Host = "localhost",
-                Password = "development",
-                Port = 5672,
-                Username = "brian",
-                VirtualHost = "people"
+                mt.AddConsumers(Assembly.GetAssembly(typeof(SaveSubjectCommandHandler)));
+                mt.UsingRabbitMq((ctx, cfg) =>
+                {
+                    cfg.Host(new Uri("amqp://localhost:5672/people"), host =>
+                    {
+                        host.Username("brian");
+                        host.Password("development");
+                    });
+                    cfg.UseBsonSerializer();
+                    cfg.ConfigureEndpoints(ctx);
+                });
             });
-            services.AddScoped(sp => sp.GetService<RabbitMQConnectionFactory>()?.Create());
-            services.AddLogging(cfg => cfg.AddConsole());
-            builder.Populate(services);
-            var mediatrTypes = new[] {typeof(IRequestHandler<,>)};
-            foreach (var type in mediatrTypes)
-            {
-                builder.RegisterAssemblyTypes(typeof(SaveSubjectCommand).Assembly)
-                    .AsClosedTypesOf(type)
-                    .InstancePerDependency();
-            }
-            return builder.Build();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
+                    BuildServiceContainer(services);
                     services.AddHostedService<Worker>();
-                    var rmqFactory = new RabbitMQConnectionFactory(RabbitMQProtocol.AMQP, "localhost", "people", 5672, null, BuildServiceContainer(), "brian", "development");
-                    services.AddSingleton(rmqFactory);
                     services.AddLogging(cfg => cfg.AddConsole());
-                    services.AddTransient(sp =>
-                    {
-                        var factory = sp.GetService<RabbitMQConnectionFactory>();
-                        var conn = factory?.Create();
-                        return conn;
-                    });
                 });
     }
 }

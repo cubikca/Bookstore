@@ -9,4 +9,8 @@
     <ProjectReference Include="..\..\RabbitWarren\src\RabbitWarren\RabbitWarren.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="7.1.4" />
+  </ItemGroup>
+
 </Project>

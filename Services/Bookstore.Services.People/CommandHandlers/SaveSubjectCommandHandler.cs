@@ -7,31 +7,32 @@ using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Repositories;
+using MassTransit;
 using RabbitWarren;
 using RabbitWarren.ClientHandlers;
 
 namespace Bookstore.Services.People.CommandHandlers
 {
-    public class SaveSubjectCommandHandler : CommandHandlerBase<SaveSubjectCommand, SaveSubjectCommandResult>
+    public class SaveSubjectCommandHandler : IConsumer<SaveSubjectCommand>
     {
         private readonly IPersonRepository _people;
         private readonly ICompanyRepository _companies;
 
-        public SaveSubjectCommandHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, IPersonRepository people, ICompanyRepository companies) : base(connection, mqOptions)
+        public SaveSubjectCommandHandler(IPersonRepository people, ICompanyRepository companies)
         {
             _people = people;
             _companies = companies;
         }
 
-        public override async Task<SaveSubjectCommandResult> Handle(SaveSubjectCommand request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<SaveSubjectCommand> context)
         {
             Subject saved = null;
-            var result = new SaveSubjectCommandResult {CorrelationId = request.Id};
+            var result = new SaveSubjectCommandResult();
             try
             {
-                if (request.Subject is Person person)
+                if (context.Message.Subject is Person person)
                     saved = await _people.SavePerson(person);
-                else if (request.Subject is Company company)
+                else if (context.Message.Subject is Company company)
                     saved = await _companies.SaveCompany(company);
                 result.Subject = saved;
                 result.Success = true;
@@ -41,7 +42,7 @@ namespace Bookstore.Services.People.CommandHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }
