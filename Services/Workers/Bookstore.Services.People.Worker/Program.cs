@@ -20,7 +20,6 @@ using MediatR;
 using MediatR.Extensions.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using RabbitWarren;
 
 namespace Bookstore.Services.Workers.People
 {
@@ -38,7 +37,6 @@ namespace Bookstore.Services.Workers.People
             {
                 opt.UseLazyLoadingProxies();
                 opt.UseSqlServer("Data Source=localhost;User Id=brian;Password=development;Initial Catalog=PeopleDevelopment");
-                opt.EnableSensitiveDataLogging();
             });
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();

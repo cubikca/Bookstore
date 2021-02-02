@@ -15,8 +15,6 @@ namespace Bookstore.Entities.Book.Repositories
         private BookContext _db;
         private ILogger _log;
         private IMapper _mapper;
-        private IPersonRepository _people;
-        private ICompanyRepository _companies;
 
         public BookRepository(BookContext db, ILogger logger, IMapper mapper)
         {

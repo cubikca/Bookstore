@@ -9,8 +9,6 @@ using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
 using MassTransit;
-using RabbitWarren;
-using RabbitWarren.ClientHandlers;
 
 namespace Bookstore.Services.People.QueryHandlers
 {

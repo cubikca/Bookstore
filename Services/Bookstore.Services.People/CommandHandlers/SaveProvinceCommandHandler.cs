@@ -7,8 +7,6 @@ using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Repositories;
 using MassTransit;
-using RabbitWarren;
-using RabbitWarren.ClientHandlers;
 
 namespace Bookstore.Services.People.CommandHandlers
 {

@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Bookstore.Entities.People;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using RabbitWarren;
 
 namespace Bookstore.Services.Workers.People
 {
