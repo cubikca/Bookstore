@@ -13,12 +13,12 @@ namespace Bookstore.Entities.Book.Repositories
     public class BookRepository : IBookRepository
     {
         private BookContext _db;
-        private ILogger _log;
+        private ILogger<BookRepository> _log;
         private IMapper _mapper;
 
-        public BookRepository(BookContext db, ILogger logger, IMapper mapper)
+        public BookRepository(IDbContextFactory<BookContext> dbFactory, ILogger<BookRepository> logger, IMapper mapper)
         {
-            _db = db;
+            _db = dbFactory.CreateDbContext();
             _log = logger;
             _mapper = mapper;
         }
@@ -27,11 +27,33 @@ namespace Bookstore.Entities.Book.Repositories
         {
             try
             {
-                Models.Book entity = null; 
-                if (book.Id != Guid.Empty)
-                    entity = await _db.Books.SingleOrDefaultAsync(b => b.Id == book.Id);
-                entity ??= new Models.Book();
+                if (book.Id == Guid.Empty)
+                    book.Id = Guid.NewGuid();
+                Models.Book entity = null;
+                if (book.Publisher != null)
+                {
+                    Models.Publisher publisherEntity = null;
+                    if (book.Publisher.Id != Guid.Empty)
+                        publisherEntity = await _db.Publishers.SingleOrDefaultAsync(p => p.Id == book.Publisher.Id);
+                    if (publisherEntity == null)
+                    {
+                        publisherEntity = new Models.Publisher {Id = Guid.NewGuid()};
+                        await _db.Publishers.AddAsync(publisherEntity);
+                    }
+                    _mapper.Map(book.Publisher, publisherEntity);
+                }
+                entity = await _db.Books.SingleOrDefaultAsync(b => b.Id == book.Id);
+                if (entity == null)
+                {
+                    entity = new Models.Book() {Id = book.Id};
+                    await _db.Books.AddAsync(entity);
+                }
                 _mapper.Map(book, entity);
+                if (book.Publisher == null && entity.Publisher != null)
+                {
+                    _db.Publishers.Remove(entity.Publisher);
+                    entity.Publisher = null;
+                }
                 await _db.SaveChangesAsync();
                 return _mapper.Map<Domains.Book.Models.Book>(entity);
             }
@@ -62,7 +84,7 @@ namespace Bookstore.Entities.Book.Repositories
         {
             try
             {
-                var book = await _db.Books.ToListAsync();
+                var book = await _db.Books.SingleOrDefaultAsync(b => b.Id == bookId);
                 return book != null ? _mapper.Map<Domains.Book.Models.Book>(book) : null;
             }
             catch (Exception ex)
@@ -90,6 +112,11 @@ namespace Bookstore.Entities.Book.Repositories
                 _log.LogError("Error while retrieving books: {Message}", message);
                 throw new EntityException(message, ex);
             }
+        }
+
+        public void Dispose()
+        {
+            _db?.Dispose();
         }
     }
 }

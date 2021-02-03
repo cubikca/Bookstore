@@ -8,6 +8,9 @@ namespace Bookstore.Entities.Book
 {
     public class BookContext : DbContext
     {
+        public BookContext(DbContextOptions<BookContext> options) : base(options)
+        {}
+        
         public DbSet<Models.Book> Books { get; set; }
         public DbSet<Models.Author> Authors { get; set; }
         public DbSet<Models.Publisher> Publishers { get; set; }
