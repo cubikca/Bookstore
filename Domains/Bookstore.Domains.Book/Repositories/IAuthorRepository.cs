@@ -6,7 +6,7 @@ using Bookstore.Domains.Book.Models;
 
 namespace Bookstore.Domains.Book.Repositories
 {
-    public interface IAuthorRepository
+    public interface IAuthorRepository : IDisposable
     {
         Task<Author> SaveAuthor(Author author); 
         Task<IList<Author>> FindAllAuthors();

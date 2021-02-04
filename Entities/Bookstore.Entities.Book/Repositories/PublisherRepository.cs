@@ -15,9 +15,9 @@ namespace Bookstore.Entities.Book.Repositories
         private readonly IMapper _mapper;
         private readonly ILogger<PublisherRepository> _log;
         
-        public PublisherRepository(BookContext db, IMapper mapper, ILogger<PublisherRepository> log)
+        public PublisherRepository(IDbContextFactory<BookContext> dbFactory, IMapper mapper, ILogger<PublisherRepository> log)
         {
-            _db = db;
+            _db = dbFactory.CreateDbContext();
             _mapper = mapper;
             _log = log;
         }
@@ -27,12 +27,16 @@ namespace Bookstore.Entities.Book.Repositories
             try
             {
                 Models.Publisher entity = null;
-                if (publisher.Id != default)
-                    entity = await _db.Publishers.SingleOrDefaultAsync(p => p.Id == publisher.Id);
-                entity ??= new Models.Publisher();
+                if (publisher.Id == default) publisher.Id = Guid.NewGuid();
+                entity = await _db.Publishers.SingleOrDefaultAsync(p => p.Id == publisher.Id);
+                if (entity == null)
+                {
+                    entity = new Models.Publisher {Id = publisher.Id};
+                    await _db.Publishers.AddAsync(entity);
+                }
                 _mapper.Map(publisher, entity);
                 await _db.SaveChangesAsync();
-                return _mapper.Map<Publisher>(entity);
+                return await FindPublisherById(entity.Id);
             }
             catch (Exception ex)
             {
@@ -90,6 +94,11 @@ namespace Bookstore.Entities.Book.Repositories
                 _log.LogError(ex, "Error while saving publisher: {Message}", message);
                 throw new EntityException(ex.Message, ex);
             }
+        }
+
+        public void Dispose()
+        {
+            _db?.Dispose();
         }
     }
 }

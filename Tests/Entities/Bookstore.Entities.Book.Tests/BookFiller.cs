@@ -12,9 +12,9 @@ namespace Bookstore.Entities.Book.Tests
         {
             _bookSetup = new Filler<Domains.Book.Models.Book>()
                 .Setup(true)
-                .OnProperty(b => b.Id).IgnoreIt()
-                .OnProperty(b => b.Authors).IgnoreIt()
-                .OnProperty(b => b.Publisher).Use(new Publisher { Id = Guid.NewGuid() })
+                .OnProperty(b => b.Id).Use(Guid.NewGuid)
+                .OnProperty(b => b.Authors).Use(new Collectionizer<Author, RandomAuthor>(1, 3))
+                .OnProperty(b => b.Publisher).Use<RandomPublisher>()
                 .Result;
         }
 
@@ -23,6 +23,26 @@ namespace Bookstore.Entities.Book.Tests
             var filler = new Filler<Domains.Book.Models.Book>();
             filler.Setup(_bookSetup);
             return filler.Create();
+        }
+    }
+
+    public class RandomAuthor : IRandomizerPlugin<Author>
+    {
+        private AuthorFiller _authorFiller = new();
+        
+        public Author GetValue()
+        {
+            return _authorFiller.FillAuthor();
+        }
+    }
+
+    public class RandomPublisher : IRandomizerPlugin<Publisher>
+    {
+        private readonly PublisherFiller _publisherFiller = new();
+        
+        public Publisher GetValue()
+        {
+            return _publisherFiller.FillPublisher();
         }
     }
 }

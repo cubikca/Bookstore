@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using AutoMapper;
 using Bookstore.Domains.Book.Repositories;
 using Bookstore.Domains.People.Repositories;
@@ -30,14 +32,15 @@ namespace Bookstore.Entities.Book.Repositories
                 if (book.Id == Guid.Empty)
                     book.Id = Guid.NewGuid();
                 Models.Book entity = null;
+                Models.Publisher publisherEntity = null;
                 if (book.Publisher != null)
                 {
-                    Models.Publisher publisherEntity = null;
-                    if (book.Publisher.Id != Guid.Empty)
-                        publisherEntity = await _db.Publishers.SingleOrDefaultAsync(p => p.Id == book.Publisher.Id);
+                    if (book.Publisher.Id == Guid.Empty)
+                        book.Publisher.Id = Guid.NewGuid();
+                    publisherEntity = await _db.Publishers.SingleOrDefaultAsync(p => p.Id == book.Publisher.Id);
                     if (publisherEntity == null)
                     {
-                        publisherEntity = new Models.Publisher {Id = Guid.NewGuid()};
+                        publisherEntity = new Models.Publisher {Id = book.Publisher.Id};
                         await _db.Publishers.AddAsync(publisherEntity);
                     }
                     _mapper.Map(book.Publisher, publisherEntity);
@@ -49,13 +52,40 @@ namespace Bookstore.Entities.Book.Repositories
                     await _db.Books.AddAsync(entity);
                 }
                 _mapper.Map(book, entity);
+                if (book.Authors?.Any() == true)
+                {
+                    foreach (var author in book.Authors)
+                    {
+                        Models.Author authorEntity = null;
+                        if (author.Id == Guid.Empty)
+                            author.Id = Guid.NewGuid();
+                        authorEntity = await _db.Authors.SingleOrDefaultAsync(a => a.Id == author.Id);
+                        if (authorEntity == null)
+                        {
+                            authorEntity = new Models.Author {Id = author.Id};
+                            entity.Authors ??= new List<Models.Author>();
+                            await _db.Authors.AddAsync(authorEntity);
+                            entity.Authors.Add(authorEntity);
+                        }
+                        _mapper.Map(author, authorEntity);
+                    }
+                }                
                 if (book.Publisher == null && entity.Publisher != null)
                 {
                     _db.Publishers.Remove(entity.Publisher);
                     entity.Publisher = null;
                 }
+                if (publisherEntity != null && entity.Publisher == null)
+                    entity.Publisher = publisherEntity;
+                foreach (var authorEntity in entity.Authors.ToList()
+                    .Where(authorEntity => book.Authors?.All(b => b.Id != authorEntity.Id) != false))
+                {
+                    // no authors, or all authors don't match
+                    _db.Authors.Remove(authorEntity);
+                    entity.Authors.Remove(authorEntity);
+                }
                 await _db.SaveChangesAsync();
-                return _mapper.Map<Domains.Book.Models.Book>(entity);
+                return await FindBookById(entity.Id);
             }
             catch (Exception ex)
             {

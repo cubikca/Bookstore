@@ -28,6 +28,7 @@ namespace Bookstore.Entities.Book.Tests
             services.AddDbContextFactory<BookContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
+                opt.EnableSensitiveDataLogging();
                 opt.UseSqlServer("Data Source=(local);Initial Catalog=BookBookTests;User Id=brian;Password=development");
             });
             services.AddScoped<IBookRepository, BookRepository>();
@@ -69,6 +70,8 @@ namespace Bookstore.Entities.Book.Tests
             var created = await _books.SaveBook(book);
             Assert.AreNotSame(book, created);
             Assert.AreEqual(book, created);
+            Assert.AreEqual(book.Authors, created.Authors);
+            Assert.AreEqual(book.Publisher, created.Publisher);
         }
 
         [Test]

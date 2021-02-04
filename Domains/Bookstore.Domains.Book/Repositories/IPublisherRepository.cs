@@ -6,7 +6,7 @@ using Bookstore.Domains.Book.Models;
 
 namespace Bookstore.Domains.Book.Repositories
 {
-    public interface IPublisherRepository
+    public interface IPublisherRepository : IDisposable
     {
         Task<Publisher> SavePublisher(Publisher publisher);
         Task<IList<Publisher>> FindAllPublishers();

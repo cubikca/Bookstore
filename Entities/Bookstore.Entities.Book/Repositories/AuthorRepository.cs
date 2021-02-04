@@ -15,9 +15,9 @@ namespace Bookstore.Entities.Book.Repositories
         private readonly IMapper _mapper;
         private readonly ILogger<AuthorRepository> _log;
         
-        public AuthorRepository(BookContext db, IMapper mapper, ILogger<AuthorRepository> log)
+        public AuthorRepository(IDbContextFactory<BookContext> dbFactory, IMapper mapper, ILogger<AuthorRepository> log)
         {
-            _db = db;
+            _db = dbFactory.CreateDbContext();
             _mapper = mapper;
             _log = log;
         }
@@ -27,12 +27,16 @@ namespace Bookstore.Entities.Book.Repositories
             try
             {
                 Models.Author entity = null;
-                if (author.Id != default)
-                    entity = await _db.Authors.SingleOrDefaultAsync(a => a.Id == author.Id);
-                entity ??= new Models.Author();
+                if (author.Id == default) author.Id = Guid.NewGuid();
+                entity = await _db.Authors.SingleOrDefaultAsync(a => a.Id == author.Id);
+                if (entity == null)
+                {
+                    entity = new Models.Author {Id = author.Id};
+                    await _db.AddAsync(entity);
+                }
                 _mapper.Map(author, entity);
                 await _db.SaveChangesAsync();
-                return _mapper.Map<Author>(entity);
+                return await FindAuthorById(entity.Id);
             }
             catch (Exception ex)
             {
@@ -90,6 +94,11 @@ namespace Bookstore.Entities.Book.Repositories
                  _log.LogError(ex, "Error while retrieving authors: {Message}", message);
                  throw new EntityException(ex.Message, ex);
             }
+        }
+
+        public void Dispose()
+        {
+            _db?.Dispose();
         }
     }
 }
