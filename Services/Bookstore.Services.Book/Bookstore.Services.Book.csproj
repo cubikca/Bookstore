@@ -5,13 +5,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="CommandHandlers" />
-      <Folder Include="QueryHandlers" />
+      <ProjectReference Include="..\..\Domains\Bookstore.Domains.Book\Bookstore.Domains.Book.csproj" />
+      <ProjectReference Include="..\..\Entities\Bookstore.Entities.Book\Bookstore.Entities.Book.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Domains\Bookstore.Domains.Book\Bookstore.Domains.Book.csproj" />
-      <ProjectReference Include="..\..\Entities\Bookstore.Entities.Book\Bookstore.Entities.Book.csproj" />
+      <PackageReference Include="MassTransit" Version="7.1.8" />
     </ItemGroup>
 
 </Project>

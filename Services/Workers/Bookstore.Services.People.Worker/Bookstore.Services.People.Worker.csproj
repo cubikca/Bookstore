@@ -4,13 +4,14 @@
     <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>dotnet-Bookstore.Services.Workers.People-02B6F473-7006-409E-A206-3059F8F2EE78</UserSecretsId>
     <RootNamespace>Bookstore.Services.Workers.People</RootNamespace>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="6.0.0" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.1.0" />
-    <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.1.4" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="7.1.4" />
+    <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.1.8" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="7.1.8" />
     <PackageReference Include="MediatR" Version="9.0.0" />
     <PackageReference Include="MediatR.Extensions.Autofac.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.0" />

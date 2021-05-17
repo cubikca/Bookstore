@@ -29,7 +29,7 @@ namespace Bookstore.Entities.Book.Tests
             {
                 opt.UseLazyLoadingProxies();
                 opt.EnableSensitiveDataLogging();
-                opt.UseSqlServer("Data Source=(local);Initial Catalog=BookBookTests;User Id=brian;Password=development");
+                opt.UseSqlServer("Data Source=sqlserver;Initial Catalog=BookBookTests;User Id=brian;Password=development");
             });
             services.AddScoped<IBookRepository, BookRepository>();
             _bookFiller = new BookFiller();

@@ -27,7 +27,7 @@ namespace Bookstore.Entities.Book.Tests
             {
                 cfg.UseLazyLoadingProxies();
                 cfg.UseSqlServer(
-                    "Data Source=(local);Initial Catalog=BookPublisherTests;User Id=brian;Password=development");
+                    "Data Source=sqlserver;Initial Catalog=BookPublisherTests;User Id=brian;Password=development");
             });
             var mapperConfig = new MapperConfiguration(cfg =>
             {

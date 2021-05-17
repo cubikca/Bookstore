@@ -36,7 +36,7 @@ namespace Bookstore.Services.Workers.People
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                opt.UseSqlServer("Data Source=localhost;User Id=brian;Password=development;Initial Catalog=PeopleDevelopment");
+                opt.UseSqlServer("Data Source=sqlserver;User Id=brian;Password=development;Initial Catalog=PeopleDevelopment");
             });
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
@@ -53,7 +53,7 @@ namespace Bookstore.Services.Workers.People
                 mt.AddConsumers(Assembly.GetAssembly(typeof(SaveSubjectCommandHandler)));
                 mt.UsingRabbitMq((ctx, cfg) =>
                 {
-                    cfg.Host(new Uri("amqp://localhost:5672/people"), host =>
+                    cfg.Host(new Uri("amqp://rabbitmq:5672/people"), host =>
                     {
                         host.Username("brian");
                         host.Password("development");
