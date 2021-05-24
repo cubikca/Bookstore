@@ -31,7 +31,7 @@ namespace Bookstore.Entities.People.Tests
             {
                 opt.UseLazyLoadingProxies();
                 opt.UseSqlServer(
-                    "Data Source=(local);Initial Catalog=PeopleCompanyTests;User Id=brian;Password=development");
+                    "Data Source=sqlserver;Initial Catalog=PeopleCompanyTests;User Id=brian;Password=development");
             });
             services.AddLogging(opt => opt.AddConsole());
             var sp = services.BuildServiceProvider();
@@ -57,6 +57,11 @@ namespace Bookstore.Entities.People.Tests
             var created = await _companies.SaveCompany(company);
             Assert.AreNotSame(company, created);
             Assert.AreEqual(company, created);
+            created = _companyFiller.FillCompany();
+            created.Id = company.Id;
+            var updated = await _companies.SaveCompany(created);
+            Assert.AreNotSame(company, updated);
+            Assert.AreEqual(created, updated);
         }
 
         [Test]

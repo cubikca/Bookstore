@@ -32,7 +32,7 @@ namespace Bookstore.Entities.People.Tests
             {
                 opt.UseLazyLoadingProxies();
                 opt.UseSqlServer(
-                        "Data Source=(local);Initial Catalog=PeoplePersonTests;User Id=brian;Password=development");
+                        "Data Source=sqlserver;Initial Catalog=PeoplePersonTests;User Id=brian;Password=development");
             });
             var sp = services.BuildServiceProvider();
             var dbFactory = sp.GetService<IDbContextFactory<PeopleContext>>();
