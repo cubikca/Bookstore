@@ -3,8 +3,9 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
-COPY ["Services/Bookstore.Services.People/Bookstore.Services.People.csproj", "Services/Bookstore.Services.People/"]
+COPY ["Domains/Bookstore.Domains.People", "Domains/Bookstore.Domains.People/"]
 COPY ["Entities/Bookstore.Entities.People/Bookstore.Entities.People.csproj", "Entities/Bookstore.Entities.People/"]
+COPY ["Services/Bookstore.Services.People/Bookstore.Services.People.csproj", "Services/Bookstore.Services.People/"]
 COPY ["Services/Workers/Bookstore.Services.People.Worker/Bookstore.Services.People.Worker.csproj", "Services/Workers/Bookstore.Services.People.Worker/"]
 RUN dotnet restore "Services/Workers/Bookstore.Services.People.Worker/Bookstore.Services.People.Worker.csproj"
 COPY . .
