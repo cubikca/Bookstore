@@ -42,10 +42,9 @@ namespace Bookstore.Services.Workers.People
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
-            services.AddScoped<ICountryRepository, CountryRepository>();
-            services.AddScoped<IProvinceRepository, ProvinceRepository>();
+            services.AddScoped<ICountryRepository, AddressRepository>();
+            services.AddScoped<IProvinceRepository, AddressRepository>();
             services.AddScoped<IAddressRepository, AddressRepository>();
-            services.AddScoped<ILocationRepository, LocationRepository>();
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<DefaultProfile>();

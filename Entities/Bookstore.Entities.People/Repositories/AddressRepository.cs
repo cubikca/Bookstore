@@ -62,6 +62,7 @@ namespace Bookstore.Entities.People.Repositories
                     p.Abbreviation == savedProvince.Abbreviation);
                 await db.SaveChangesAsync();
                 await db.Database.CommitTransactionAsync();
+                return await FindAddressById(entity.Id);
             }
             catch (Exception ex)
             {
@@ -72,17 +73,70 @@ namespace Bookstore.Entities.People.Repositories
 
         public async Task<ICollection<Address>> FindAllAddresses()
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                return Mapper.Map<List<Address>>(db.Addresses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to retrieve Address data");
+                throw new PeopleException("Unable to retrieve Address data");
+            }
         }
 
         public async Task<Address> FindAddressById(Guid addressId)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await db.Addresses.SingleAsync(a => a.Id == addressId);
+                return Mapper.Map<Address>(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to retrieve Address data");
+                throw new PeopleException("Unable to retrieve Address data", ex);
+            }
         }
 
         public async Task<bool> RemoveAddress(Guid addressId)
         {
-            throw new NotImplementedException();
+            /*
+             * Removing an address should also set referring fields to null: Person.StreetAddress, Person.MailingAddress,
+             * Location.StreetAddress, Location.MailingAddress. While this could be accomplished using CASCADE SET NULL
+             * in an RDBMS that supports multiple cascade paths, I think that it is the wrong approach. First, it is
+             * not clear from code that this is happening. Second, reliance on a vendor-specific feature defeats the
+             * purpose of using a platform-agnostic library like EF Core.
+             */
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await db.Addresses.SingleOrDefaultAsync(a => a.Id == addressId);
+                if (entity == null) return false;
+                var locations = await db.Locations
+                    .Where(l => l.MailingAddressId == addressId || l.StreetAddressId == addressId).ToListAsync();
+                locations.ForEach(l =>
+                {
+                    if (l.MailingAddressId == addressId) l.MailingAddressId = null;
+                    if (l.StreetAddressId == addressId) l.StreetAddressId = null;
+                });
+                var people = await db.People
+                    .Where(p => p.MailingAddress.Id == addressId || p.StreetAddress.Id == addressId).ToListAsync();
+                people.ForEach(p =>
+                {
+                    if (p.MailingAddress?.Id == addressId) p.MailingAddress = null;
+                    if (p.StreetAddress?.Id == addressId) p.StreetAddress = null;
+                });
+                db.Addresses.Remove(entity);
+                await db.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to remove Address");
+                throw new PeopleException("Unable to remove Address", ex);
+            }
         }
 
         public async Task<Country> SaveCountry(Country country)
