@@ -26,14 +26,17 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("City")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid?>("CountryId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("CountryAbbreviation")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("PostalCode")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid?>("ProvinceId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("ProvinceAbbreviation")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ProvinceCountryAbbreviation")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Street1")
                         .HasColumnType("longtext");
@@ -43,26 +46,22 @@ namespace Bookstore.Entities.People.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CountryId");
+                    b.HasIndex("CountryAbbreviation");
 
-                    b.HasIndex("ProvinceId");
+                    b.HasIndex("ProvinceAbbreviation", "ProvinceCountryAbbreviation");
 
                     b.ToTable("Addresses");
                 });
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Country", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("Abbreviation")
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.HasKey("Id");
+                    b.HasKey("Abbreviation");
 
                     b.ToTable("Countries");
                 });
@@ -217,22 +216,18 @@ namespace Bookstore.Entities.People.Migrations
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Province", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("Abbreviation")
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<Guid>("CountryId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("CountryAbbreviation")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.HasKey("Id");
+                    b.HasKey("Abbreviation", "CountryAbbreviation");
 
-                    b.HasIndex("CountryId");
+                    b.HasIndex("CountryAbbreviation");
 
                     b.ToTable("Provinces");
                 });
@@ -306,11 +301,11 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.HasOne("Bookstore.Entities.People.Models.Country", "Country")
                         .WithMany()
-                        .HasForeignKey("CountryId");
+                        .HasForeignKey("CountryAbbreviation");
 
                     b.HasOne("Bookstore.Entities.People.Models.Province", "Province")
                         .WithMany()
-                        .HasForeignKey("ProvinceId");
+                        .HasForeignKey("ProvinceAbbreviation", "ProvinceCountryAbbreviation");
 
                     b.Navigation("Country");
 
@@ -385,7 +380,7 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.HasOne("Bookstore.Entities.People.Models.Country", "Country")
                         .WithMany("Provinces")
-                        .HasForeignKey("CountryId")
+                        .HasForeignKey("CountryAbbreviation")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

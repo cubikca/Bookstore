@@ -108,7 +108,7 @@ namespace Bookstore.Services.People.Tests
                 saveProvinceResponse = 
                     await _saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvinceCommand);
                 var province2 = saveProvinceResponse.Message.Province;
-                var findCountryQuery = new FindCountriesQuery {CountryId = country.Id};
+                var findCountryQuery = new FindCountriesQuery {CountryAbbreviation = country.Abbreviation};
                 var findCountryResponse =
                     await _findCountriesClient.GetResponse<FindCountriesQueryResult>(findCountryQuery);
                 var findCountryResult = findCountryResponse.Message;
@@ -117,7 +117,7 @@ namespace Bookstore.Services.People.Tests
                 foundCountry = findCountryResult.Results.Single();
                 Assert.AreNotSame(country, foundCountry);
                 Assert.AreEqual(country, foundCountry);
-                var findProvinceQuery = new FindProvincesQuery {ProvinceId = province1?.Id};
+                var findProvinceQuery = new FindProvincesQuery {ProvinceAbbreviation = province1?.Abbreviation};
                 var findProvinceResponse =
                     await _findProvincesClient.GetResponse<FindProvincesQueryResult>(findProvinceQuery);
                 var findProvinceResult = findProvinceResponse.Message;
@@ -126,7 +126,7 @@ namespace Bookstore.Services.People.Tests
                 Assert.NotNull(foundProvince);
                 Assert.AreNotSame(province1, foundProvince);
                 Assert.AreEqual(province1, foundProvince);
-                var findProvincesQuery = new FindProvincesQuery {CountryId = country.Id};
+                var findProvincesQuery = new FindProvincesQuery {CountryAbbreviation = country.Abbreviation};
                 var findProvincesResponse =
                     await _findProvincesClient.GetResponse<FindProvincesQueryResult>(findProvincesQuery);
                 var findProvincesResult = findProvincesResponse.Message;
@@ -170,21 +170,21 @@ namespace Bookstore.Services.People.Tests
             province2 = saveProvince2Response.Message.Province;
 
             // remove province 2 by itself
-            var removeProvince2Command = new RemoveProvinceCommand {ProvinceId = province2.Id};
+            var removeProvince2Command = new RemoveProvinceCommand {ProvinceAbbreviation = province2.Abbreviation};
             var removeProvince2Response =
                 await removeProvinceClient.GetResponse<RemoveProvinceCommandResult>(removeProvince2Command);
             Assert.IsTrue(removeProvince2Response.Message.Success);
-            var findProvince2Query = new FindProvincesQuery {ProvinceId = province2.Id};
+            var findProvince2Query = new FindProvincesQuery {ProvinceAbbreviation = province2.Abbreviation};
             var findProvince2Response =
                 await findProvinceClient.GetResponse<FindProvincesQueryResult>(findProvince2Query);
             Assert.AreEqual(0, findProvince2Response.Message.Results.Count);
 
             // province 1 should be deleted when country is deleted
-            var removeCountryCommand = new RemoveCountryCommand {CountryId = country.Id};
+            var removeCountryCommand = new RemoveCountryCommand {CountryAbbreviation = country.Abbreviation};
             var removeCountryResponse =
                 await removeCountryClient.GetResponse<RemoveCountryCommandResult>(removeCountryCommand);
-            var findCountryQuery = new FindCountriesQuery {CountryId = country.Id};
-            var findProvince1Query = new FindProvincesQuery {ProvinceId = province1.Id};
+            var findCountryQuery = new FindCountriesQuery {CountryAbbreviation = country.Abbreviation};
+            var findProvince1Query = new FindProvincesQuery {ProvinceAbbreviation = province1.Abbreviation};
             var findCountryTask = findCountryClient.GetResponse<FindCountriesQueryResult>(findCountryQuery);
             var findProvince1Task = findProvinceClient.GetResponse<FindProvincesQueryResult>(findProvince1Query);
             await Task.WhenAll(findCountryTask, findProvince1Task);

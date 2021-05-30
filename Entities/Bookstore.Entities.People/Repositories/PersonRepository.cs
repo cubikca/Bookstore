@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace Bookstore.Entities.People.Repositories
 {
@@ -26,8 +27,9 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 if (person.GivenNames == null) throw new ArgumentNullException(nameof(person.GivenNames));
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                await db.Database.BeginTransactionAsync();
                 if (person.Id == default)
                     person.Id = Guid.NewGuid();
                 var entity = await db.People.SingleOrDefaultAsync(p => p.Id == person.Id);
@@ -163,8 +165,8 @@ namespace Bookstore.Entities.People.Repositories
                 }
                 if (add) await db.People.AddAsync(entity);
                 await db.SaveChangesAsync();
-                await db.Database.CommitTransactionAsync();
                 person = await FindPersonById(person.Id);
+                scope.Complete();
                 return person;
             }
             catch (Exception ex)
@@ -211,6 +213,8 @@ namespace Bookstore.Entities.People.Repositories
         {
             try
             {
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var entity = await db.People.SingleOrDefaultAsync(p => p.Id == personId);
                 if (entity == null) return false;
@@ -226,6 +230,7 @@ namespace Bookstore.Entities.People.Repositories
                     db.OnlinePresence.Remove(entity.OnlinePresence);
                 db.People.Remove(entity);
                 await db.SaveChangesAsync();
+                scope.Complete();
                 return true;
             }
             catch (Exception ex)

@@ -16,8 +16,6 @@ namespace Bookstore.Entities.People.Tests
     {
         private IMapper _mapper;
         private IPersonRepository _people;
-        private IProvinceRepository _provinces;
-        private ICountryRepository _countries;
         private IAddressRepository _addresses;
         private PersonFiller _personFiller;
 
@@ -40,10 +38,7 @@ namespace Bookstore.Entities.People.Tests
                 cfg.AddProfile<DefaultProfile>();
             });
             _mapper = mapperConfig.CreateMapper();
-            _provinces = new ProvinceRepository(dbFactory, _mapper, sp.GetService<ILogger<ProvinceRepository>>());
-            _countries = new CountryRepository(dbFactory, _mapper, _provinces,
-                sp.GetService<ILogger<CountryRepository>>());
-            _addresses = new AddressRepository(dbFactory, _mapper, _countries, _provinces, sp.GetService<ILogger<AddressRepository>>());
+            _addresses = new AddressRepository(dbFactory, _mapper, sp.GetService<ILogger<AddressRepository>>());
             _people = new PersonRepository(dbFactory, _mapper, _addresses, sp.GetService<ILogger<PersonRepository>>());
             _personFiller = new PersonFiller();
         }

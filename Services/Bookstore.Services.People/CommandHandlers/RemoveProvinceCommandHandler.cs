@@ -24,7 +24,7 @@ namespace Bookstore.Services.People.CommandHandlers
             var result = new RemoveProvinceCommandResult();
             try
             {
-                result.Success = await _provinces.RemoveProvince(context.Message.ProvinceId);
+                result.Success = await _provinces.RemoveProvince(context.Message.ProvinceAbbreviation);
             }
             catch (Exception ex)
             {

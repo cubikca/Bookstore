@@ -28,16 +28,16 @@ namespace Bookstore.Services.People.QueryHandlers
             var result = new FindProvincesQueryResult {Results = queryResults};
             try
             {
-                if (context.Message.ProvinceId.HasValue && context.Message.CountryId.HasValue) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
-                if (!context.Message.ProvinceId.HasValue && !context.Message.CountryId.HasValue) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
-                if (context.Message.ProvinceId.HasValue)
+                if (context.Message.ProvinceAbbreviation != null && context.Message.CountryAbbreviation != null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
+                if (context.Message.ProvinceAbbreviation == null && context.Message.CountryAbbreviation == null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
+                if (context.Message.ProvinceAbbreviation != null)
                 {
-                    var province = await _provinces.FindProvinceById(context.Message.ProvinceId.Value);
+                    var province = await _provinces.FindProvinceByAbbreviation(context.Message.ProvinceAbbreviation);
                     if (province != null) queryResults.Add(province);
                 }
-                if (context.Message.CountryId.HasValue)
+                if (context.Message.CountryAbbreviation != null)
                 {
-                    var provinces = await _provinces.FindProvincesByCountryId(context.Message.CountryId.Value);
+                    var provinces = await _provinces.FindProvincesByCountryAbbreviation(context.Message.CountryAbbreviation);
                     queryResults.AddRange(provinces ?? Enumerable.Empty<Province>());
                 }
             }

@@ -43,13 +43,11 @@ namespace Bookstore.Entities.People.Tests
                 .Result;
             Filler<Province> prFiller = new Filler<Province>();
             ProvinceSetup = prFiller.Setup(true)
-                .OnProperty(p => p.Id).Use(Guid.NewGuid)
                 .OnProperty(p => p.Abbreviation).Use(new MnemonicString(1, 2, 3))
                 .OnProperty(p => p.Name).Use(new MnemonicString(1, 5, 10))
                 .Result;
             Filler<Country> cyFiller = new Filler<Country>();
             CountrySetup = cyFiller.Setup(true)
-                .OnProperty(c => c.Id).Use(Guid.NewGuid)
                 .OnProperty(c => c.Abbreviation).Use(new MnemonicString(1, 2, 3))
                 .OnProperty(c => c.Name).Use(new MnemonicString(1, 5, 10))
                 .Result;

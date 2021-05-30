@@ -23,10 +23,7 @@ namespace Bookstore.Entities.People.Tests
         // This is only for testing purposes; there is very loose coupling between Subjects and their corresponding subtypes
         private IPersonRepository _people;
         private ICompanyRepository _companies;
-        private IProvinceRepository _provinces;
-        private ICountryRepository _countries;
         private IAddressRepository _addresses;
-        private ILocationRepository _locations;
         private IMapper _mapper;
         private CompanyFiller _companyFiller;
         private PersonFiller _personFiller;
@@ -53,13 +50,9 @@ namespace Bookstore.Entities.People.Tests
             Assert.NotNull(dbFactory);
             await using var db = dbFactory.CreateDbContext();
             Assert.NotNull(db);
-            _provinces = new ProvinceRepository(dbFactory, _mapper, sp.GetService<ILogger<ProvinceRepository>>());
-            _countries = new CountryRepository(dbFactory, _mapper, _provinces,
-                sp.GetService<ILogger<CountryRepository>>());
-            _addresses = new AddressRepository(dbFactory, _mapper, _countries, _provinces, sp.GetService<ILogger<AddressRepository>>());
+            _addresses = new AddressRepository(dbFactory, _mapper, sp.GetService<ILogger<AddressRepository>>());
             _people = new PersonRepository(dbFactory, _mapper, _addresses, sp.GetService<ILogger<PersonRepository>>());
-            _locations = new LocationRepository(dbFactory, _mapper, _addresses, _people, sp.GetService<ILogger<LocationRepository>>());
-            _companies = new CompanyRepository(dbFactory, _mapper, _people, _locations, sp.GetService<ILogger<CompanyRepository>>());
+            _companies = new CompanyRepository(dbFactory, _mapper, _addresses, _people, sp.GetService<ILogger<CompanyRepository>>());
             _subjects = new SubjectRepository(dbFactory, _mapper, _people, _companies, sp.GetService<ILogger<SubjectRepository>>());
             _companyFiller = new CompanyFiller();
             _personFiller = new PersonFiller();

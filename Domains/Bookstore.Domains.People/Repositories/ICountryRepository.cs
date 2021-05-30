@@ -10,8 +10,8 @@ namespace Bookstore.Domains.People.Repositories
     public interface ICountryRepository
     {
         Task<Country> SaveCountry(Country country);
-        Task<Country> FindCountryById(Guid countryId);
+        Task<Country> FindCountryByAbbreviation(string abbreviation);
         Task<ICollection<Country>> FindAllCountries();
-        Task<bool> RemoveCountry(Guid countryId);
+        Task<bool> RemoveCountry(string abbreviation);
     }
 }

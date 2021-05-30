@@ -8,6 +8,6 @@ namespace Bookstore.Domains.People.Queries
 {
     public class FindCountriesQuery
     {
-        public Guid? CountryId { get; set; }
+        public string CountryAbbreviation { get; set; }
     }
 }

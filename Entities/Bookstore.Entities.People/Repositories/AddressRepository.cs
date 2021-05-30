@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using AutoMapper;
 using Bookstore.Domains.People;
 using Bookstore.Domains.People.Models;
@@ -26,8 +27,9 @@ namespace Bookstore.Entities.People.Repositories
         {
             try
             {
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                await db.Database.BeginTransactionAsync();
                 var entity = await db.Addresses.SingleOrDefaultAsync(a => a.Id == address.Id);
                 if (entity == null)
                 {
@@ -35,7 +37,6 @@ namespace Bookstore.Entities.People.Repositories
                     await db.Addresses.AddAsync(entity);
                 }
                 Mapper.Map(address, entity);
-                await db.SaveChangesAsync();
                 var countryEntity =
                     address.Country != null 
                         ? await db.Countries.SingleOrDefaultAsync(c => c.Abbreviation == address.Country.Abbreviation) 
@@ -48,7 +49,7 @@ namespace Bookstore.Entities.People.Repositories
                     address.Province != null
                         ? await db.Provinces.SingleOrDefaultAsync(p =>
                             p.Abbreviation == address.Province.Abbreviation &&
-                            p.CountryId == address.Province.Country.Id)
+                            p.Country.Abbreviation == address.Province.Country.Abbreviation)
                         : null;
                 if (address.Province != null
                     && provinceEntity != null
@@ -61,8 +62,9 @@ namespace Bookstore.Entities.People.Repositories
                     p.Country.Abbreviation == savedProvince.Country.Abbreviation &&
                     p.Abbreviation == savedProvince.Abbreviation);
                 await db.SaveChangesAsync();
-                await db.Database.CommitTransactionAsync();
-                return await FindAddressById(entity.Id);
+                var result = await FindAddressById(entity.Id); 
+                scope.Complete();
+                return result;
             }
             catch (Exception ex)
             {
@@ -141,47 +143,189 @@ namespace Bookstore.Entities.People.Repositories
 
         public async Task<Country> SaveCountry(Country country)
         {
-            throw new NotImplementedException();
+            try
+            {
+                using var scope = Transaction.Current != null
+                    ? new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled)
+                    : new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await db.Countries.SingleOrDefaultAsync(c => c.Abbreviation == country.Abbreviation);
+                if (entity == null)
+                {
+                    entity = new Models.Country {Abbreviation = country.Abbreviation};
+                    await db.Countries.AddAsync(entity);
+                }
+                Mapper.Map(country, entity);
+                await db.SaveChangesAsync();
+                var result = await FindCountryByAbbreviation(entity.Abbreviation);
+                scope.Complete();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to save Country");
+                throw new PeopleException("Unable to save Country", ex);
+            }
         }
 
-        public async Task<Country> FindCountryById(Guid countryId)
+        public async Task<Country> FindCountryByAbbreviation(string abbreviation)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await db.Countries.SingleOrDefaultAsync(c => c.Abbreviation == abbreviation);
+                return Mapper.Map<Country>(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to retrieve Country");
+                throw new PeopleException("Unable to retrieve Country", ex);
+            }
         }
 
         public async Task<ICollection<Country>> FindAllCountries()
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                return Mapper.Map<List<Country>>(db.Countries);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to retrieve Countries");
+                throw new PeopleException("Unable to retrieve Countries", ex);
+            }
         }
 
-        public async Task<bool> RemoveCountry(Guid countryId)
+        public async Task<bool> RemoveCountry(string abbreviation)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                await db.Database.BeginTransactionAsync();
+                var entity = await db.Countries.SingleOrDefaultAsync(c => c.Abbreviation == abbreviation);
+                if (entity == null) return false;
+                // like addresses, provinces must be disconnected from the country first and then deleted as part of
+                // the country deletion
+                var provinces = await db.Provinces.Where(p => p.Country.Abbreviation == abbreviation).ToListAsync();
+                var addresses = await db.Addresses.Where(a => a.Country.Abbreviation == abbreviation).ToListAsync();
+                foreach (var province in provinces)
+                    province.Country = null;
+                await db.SaveChangesAsync();
+                foreach (var province in provinces)
+                    await RemoveProvince(province.Abbreviation);
+                foreach (var address in addresses)
+                    address.Country = null;
+                db.Countries.Remove(entity);
+                await db.SaveChangesAsync();
+                await db.Database.CommitTransactionAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to remove Country");
+                throw new PeopleException("Unable to remove Country", ex);
+            }
         }
 
         public async Task<Province> SaveProvince(Province province)
         {
-            throw new NotImplementedException();
+            try
+            {
+                Province result = null;
+                if (province.Country == null) throw new ArgumentException(nameof(province.Country));
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await db.Provinces.SingleOrDefaultAsync(p => p.Abbreviation == province.Abbreviation);
+                if (entity == null)
+                {
+                    var countryEntity =
+                        await db.Countries.SingleOrDefaultAsync(c => c.Abbreviation == province.Country.Abbreviation);
+                    if (countryEntity == null)
+                    {
+                        var savedCountry = await SaveCountry(province.Country);
+                        countryEntity = await db.Countries.SingleAsync(c => c.Abbreviation == savedCountry.Abbreviation);
+                    }
+                    entity = new Models.Province(province.Abbreviation, countryEntity.Abbreviation);
+                    await db.Provinces.AddAsync(entity);
+                }
+                Mapper.Map(province, entity);
+                await db.SaveChangesAsync();
+                result = await FindProvinceByAbbreviation(entity.Abbreviation);
+                scope.Complete();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to save Province");
+                throw new PeopleException("Unable to save Province", ex);
+            }
         }
 
-        public async Task<Province> FindProvinceById(Guid provinceId)
+        public async Task<Province> FindProvinceByAbbreviation(string abbreviation)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await db.Provinces.SingleOrDefaultAsync(p => p.Abbreviation == abbreviation);
+                return Mapper.Map<Province>(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to retrieve Province");
+                throw new PeopleException("Unable to retrieve Province", ex);
+            }
         }
 
-        public async Task<ICollection<Province>> FindProvincesByCountryId(Guid countryId)
+        public async Task<ICollection<Province>> FindProvincesByCountryAbbreviation(string countryAbbreviation)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var provinces = await db.Provinces.Where(p => p.Country.Abbreviation == countryAbbreviation).ToListAsync();
+                return Mapper.Map<List<Province>>(provinces);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to retrieve Provinces for Country");
+                throw new PeopleException("Unable to retrieve Provinces for Country", ex);
+            }
         }
 
         public async Task<ICollection<Province>> FindAllProvinces()
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                return Mapper.Map<List<Province>>(await db.Provinces.ToListAsync());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to retrieve Provinces");
+                throw new PeopleException("Unable to retrieve Provinces", ex);
+            }
         }
 
-        public async Task<bool> RemoveProvince(Guid provinceId)
+        public async Task<bool> RemoveProvince(string abbreviation)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await db.Provinces.SingleOrDefaultAsync(p => p.Abbreviation == abbreviation);
+                // clear references to this Province
+                var addresses = await db.Addresses.Where(p => p.Province.Abbreviation == abbreviation).ToListAsync();
+                foreach (var address in addresses)
+                    address.Province = null;
+                db.Provinces.Remove(entity);
+                await db.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to remove Province");
+                throw new PeopleException("Unable to remove Province");
+            }
         }
     }
 }

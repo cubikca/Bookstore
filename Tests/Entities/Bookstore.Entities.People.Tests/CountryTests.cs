@@ -16,8 +16,8 @@ namespace Bookstore.Entities.People.Tests
     public class CountryTests
     {
         private IMapper _mapper;
-        private IProvinceRepository _provinces;
-        private ICountryRepository _countries;
+        // we want to test all three interfaces, so use the class type instead
+        private AddressRepository _addresses;
         private Filler<Country> _countryFiller;
         private Filler<Province> _provinceFiller;
 
@@ -40,8 +40,7 @@ namespace Bookstore.Entities.People.Tests
                 cfg.AddProfile<DefaultProfile>();
             });
             _mapper = mapperConfig.CreateMapper();
-            _provinces = new ProvinceRepository(dbFactory, _mapper, sp.GetService<ILogger<ProvinceRepository>>());
-            _countries = new CountryRepository(dbFactory, _mapper, _provinces, sp.GetService<ILogger<CountryRepository>>());
+            _addresses = new AddressRepository(dbFactory, _mapper, sp.GetService<ILogger<AddressRepository>>());
             _countryFiller = new Filler<Country>();
             _provinceFiller = new Filler<Province>();
             await using var db = dbFactory.CreateDbContext();
@@ -51,12 +50,12 @@ namespace Bookstore.Entities.People.Tests
         public async Task TestSave()
         {
             var country = _countryFiller.Create();
-            var created = await _countries.SaveCountry(country);
+            var created = await _addresses.SaveCountry(country);
             Assert.AreNotSame(country, created);
             Assert.AreEqual(country, created);
             var province = _provinceFiller.Create();
             province.Country = created;
-            var createdProvince = await _provinces.SaveProvince(province);
+            var createdProvince = await _addresses.SaveProvince(province);
             Assert.AreNotSame(province, createdProvince);
             Assert.AreEqual(province, createdProvince);
         }
@@ -65,14 +64,14 @@ namespace Bookstore.Entities.People.Tests
         public async Task TestFind()
         {
             var country = _countryFiller.Create();
-            country = await _countries.SaveCountry(country);
+            country = await _addresses.SaveCountry(country);
             var province = _provinceFiller.Create();
             province.Country = country;
-            province = await _provinces.SaveProvince(province);
-            var found = await _countries.FindCountryById(country.Id);
-            var foundProvince = await _provinces.FindProvinceById(province.Id);
-            var all = await _countries.FindAllCountries();
-            var provinces = await _provinces.FindProvincesByCountryId(country.Id);
+            province = await _addresses.SaveProvince(province);
+            var found = await _addresses.FindCountryByAbbreviation(country.Abbreviation);
+            var foundProvince = await _addresses.FindProvinceByAbbreviation(province.Abbreviation);
+            var all = await _addresses.FindAllCountries();
+            var provinces = await _addresses.FindProvincesByCountryAbbreviation(country.Abbreviation);
             Assert.AreNotSame(country, found);
             Assert.AreEqual(country, found);
             Assert.IsTrue(all.Contains(found));
@@ -85,17 +84,17 @@ namespace Bookstore.Entities.People.Tests
         public async Task TestRemove()
         {
             var country = _countryFiller.Create();
-            country = await _countries.SaveCountry(country);
+            country = await _addresses.SaveCountry(country);
             var province = _provinceFiller.Create();
             province.Country = country;
-            province = await _provinces.SaveProvince(province);
-            var provinceRemoved = await _provinces.RemoveProvince(province.Id);
+            province = await _addresses.SaveProvince(province);
+            var provinceRemoved = await _addresses.RemoveProvince(province.Abbreviation);
             Assert.IsTrue(provinceRemoved);
-            var foundProvince = await _provinces.FindProvinceById(province.Id);
+            var foundProvince = await _addresses.FindProvinceByAbbreviation(province.Abbreviation);
             Assert.IsNull(foundProvince);
-            var countryRemoved = await _countries.RemoveCountry(country.Id);
+            var countryRemoved = await _addresses.RemoveCountry(country.Abbreviation);
             Assert.IsTrue(countryRemoved);
-            var found = await _countries.FindCountryById(country.Id);
+            var found = await _addresses.FindCountryByAbbreviation(country.Abbreviation);
             Assert.IsNull(found);
         }
     }

@@ -8,7 +8,7 @@ namespace Bookstore.Domains.People.Queries
 {
     public class FindProvincesQuery 
     {
-        public Guid? ProvinceId { get; set; }
-        public Guid? CountryId { get; set; }
+        public string ProvinceAbbreviation { get; set; }
+        public string CountryAbbreviation { get; set; }
     }
 }

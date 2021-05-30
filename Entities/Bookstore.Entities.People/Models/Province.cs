@@ -9,16 +9,16 @@ namespace Bookstore.Entities.People.Models
     public class Province
     {
         public string Abbreviation { get; set; }
-        public Guid CountryId { get; }
+        public string CountryAbbreviation { get; set; }
         public string Name { get; set; }
 
-        public Province(string abbreviation, Guid countryId)
+        public Province(string abbreviation, string countryAbbreviation)
         {
             Abbreviation = abbreviation;
-            CountryId = countryId;
+            CountryAbbreviation = countryAbbreviation;
         }
 
-        [ForeignKey("CountryId")]
+        [ForeignKey("CountryAbbreviation")]
         public virtual Country Country { get; set; }
     }
 }

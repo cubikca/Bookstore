@@ -24,7 +24,7 @@ namespace Bookstore.Services.People.CommandHandlers
             var result = new RemoveCountryCommandResult();
             try
             {
-                result.Success = await _countries.RemoveCountry(context.Message.CountryId);
+                result.Success = await _countries.RemoveCountry(context.Message.CountryAbbreviation);
             }
             catch (Exception ex)
             {

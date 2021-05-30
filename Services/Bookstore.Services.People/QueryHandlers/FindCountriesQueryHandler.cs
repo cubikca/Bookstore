@@ -27,9 +27,9 @@ namespace Bookstore.Services.People.QueryHandlers
             var result = new FindCountriesQueryResult {Results = new List<Country>()};
             try
             {
-                if (context.Message.CountryId.HasValue)
+                if (context.Message.CountryAbbreviation != null)
                 {
-                    var country = await _countries.FindCountryById(context.Message.CountryId.Value);
+                    var country = await _countries.FindCountryByAbbreviation(context.Message.CountryAbbreviation);
                     if (country != null)
                         result.Results.Add(country);
                 }

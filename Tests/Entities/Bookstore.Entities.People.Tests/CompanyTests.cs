@@ -37,11 +37,9 @@ namespace Bookstore.Entities.People.Tests
                 cfg.AddProfile<DefaultProfile>();
             });
             _mapper = mapperConfig.CreateMapper();
-            var addresses = new AddressRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, countries, provinces, sp.GetService<ILogger<AddressRepository>>());
+            var addresses = new AddressRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, sp.GetService<ILogger<AddressRepository>>());
             var people = new PersonRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, addresses, sp.GetService<ILogger<PersonRepository>>());
-            var locations = new LocationRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, addresses,
-                people, sp.GetService<ILogger<LocationRepository>>());
-            _companies = new CompanyRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, people, locations, sp.GetService<ILogger<CompanyRepository>>());
+            _companies = new CompanyRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, addresses, people, sp.GetService<ILogger<CompanyRepository>>());
             _companyFiller = new CompanyFiller();
         }
 
