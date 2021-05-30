@@ -12,11 +12,11 @@ namespace Bookstore.Services.People.CommandHandlers
 {
     public class RemoveProvinceCommandHandler : IConsumer<RemoveProvinceCommand>
     {
-        private readonly ICountryRepository _countries;
+        private readonly IProvinceRepository _provinces;
 
-        public RemoveProvinceCommandHandler(ICountryRepository countries)
+        public RemoveProvinceCommandHandler(IProvinceRepository provinces)
         {
-            _countries = countries;
+            _provinces = provinces;
         }
 
         public async Task Consume(ConsumeContext<RemoveProvinceCommand> context)
@@ -24,7 +24,7 @@ namespace Bookstore.Services.People.CommandHandlers
             var result = new RemoveProvinceCommandResult();
             try
             {
-                result.Success = await _countries.RemoveProvince(context.Message.ProvinceId);
+                result.Success = await _provinces.RemoveProvince(context.Message.ProvinceId);
             }
             catch (Exception ex)
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ namespace Bookstore.Services.People.QueryHandlers
                 else
                 {
                     var subjects = await _subjects.FindAllSubjects();
-                    result.Results = subjects;
+                    result.Results = subjects.ToList();
                 }
                 result.Success = true;
             }

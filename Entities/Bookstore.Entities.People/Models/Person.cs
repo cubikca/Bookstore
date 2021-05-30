@@ -15,11 +15,11 @@ namespace Bookstore.Entities.People.Models
         /// <summary>
         /// All of the names for this person except the family name
         /// </summary>
-        public virtual List<PersonGivenName> GivenNames { get; set; }
+        public virtual IList<PersonGivenName> GivenNames { get; set; }
         /// <summary>
         /// Additional conversational names for this person
         /// </summary>
-        public virtual List<PersonKnownAsName> KnownAs { get; set; }
+        public virtual IList<PersonKnownAsName> KnownAs { get; set; }
         /// <summary>
         /// Family name for this person
         /// </summary>

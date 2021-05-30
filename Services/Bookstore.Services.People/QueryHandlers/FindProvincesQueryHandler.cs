@@ -15,11 +15,11 @@ namespace Bookstore.Services.People.QueryHandlers
 {
     public class FindProvincesQueryHandler : IConsumer<FindProvincesQuery>
     {
-        private readonly ICountryRepository _countries;
+        private readonly IProvinceRepository _provinces;
 
-        public FindProvincesQueryHandler(ICountryRepository countries)
+        public FindProvincesQueryHandler(IProvinceRepository provinces)
         {
-            _countries = countries;
+            _provinces = provinces;
         }
 
         public async Task Consume(ConsumeContext<FindProvincesQuery> context)
@@ -32,12 +32,12 @@ namespace Bookstore.Services.People.QueryHandlers
                 if (!context.Message.ProvinceId.HasValue && !context.Message.CountryId.HasValue) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
                 if (context.Message.ProvinceId.HasValue)
                 {
-                    var province = await _countries.FindProvinceById(context.Message.ProvinceId.Value);
+                    var province = await _provinces.FindProvinceById(context.Message.ProvinceId.Value);
                     if (province != null) queryResults.Add(province);
                 }
                 if (context.Message.CountryId.HasValue)
                 {
-                    var provinces = await _countries.FindProvincesByCountryId(context.Message.CountryId.Value);
+                    var provinces = await _provinces.FindProvincesByCountryId(context.Message.CountryId.Value);
                     queryResults.AddRange(provinces ?? Enumerable.Empty<Province>());
                 }
             }

@@ -12,11 +12,11 @@ namespace Bookstore.Services.People.CommandHandlers
 {
     public class SaveProvinceCommandHandler : IConsumer<SaveProvinceCommand>
     {
-        private readonly ICountryRepository _countries;
+        private readonly IProvinceRepository _provinces;
 
-        public SaveProvinceCommandHandler(ICountryRepository countries)
+        public SaveProvinceCommandHandler(IProvinceRepository provinces)
         {
-            _countries = countries;
+            _provinces = provinces;
         }
 
         public async Task Consume(ConsumeContext<SaveProvinceCommand> context)
@@ -24,7 +24,7 @@ namespace Bookstore.Services.People.CommandHandlers
             var result = new SaveProvinceCommandResult();
             try
             {
-                var province = await _countries.SaveProvince(context.Message.Province);
+                var province = await _provinces.SaveProvince(context.Message.Province);
                 result.Province = province;
             }
             catch (Exception ex)

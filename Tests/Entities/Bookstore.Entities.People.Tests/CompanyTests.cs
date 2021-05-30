@@ -1,18 +1,13 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
-using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Repositories;
-using Bookstore.Entities.People;
 using Bookstore.Entities.People.AutoMapper;
 using Bookstore.Entities.People.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using NUnit.Framework;
-using Tynamix.ObjectFiller;
 
 namespace Bookstore.Entities.People.Tests
 {
@@ -24,14 +19,14 @@ namespace Bookstore.Entities.People.Tests
         private CompanyFiller _companyFiller;
 
         [OneTimeSetUp]
-        public async Task OneTimeSetUp()
+        public void OneTimeSetUp()
         {
             var services = new ServiceCollection();
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                opt.UseSqlServer(
-                    "Data Source=sqlserver;Initial Catalog=PeopleCompanyTests;User Id=brian;Password=development");
+                var connectionString = "server=mysql;user=brian;password=development;database=PeopleEntitiesTests";
+                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             services.AddLogging(opt => opt.AddConsole());
             var sp = services.BuildServiceProvider();
@@ -42,12 +37,12 @@ namespace Bookstore.Entities.People.Tests
                 cfg.AddProfile<DefaultProfile>();
             });
             _mapper = mapperConfig.CreateMapper();
-            var people = new PersonRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, sp.GetService<ILogger<PersonRepository>>());
-            _companies = new CompanyRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, sp.GetService<ILogger<CompanyRepository>>(), people);
+            var addresses = new AddressRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, countries, provinces, sp.GetService<ILogger<AddressRepository>>());
+            var people = new PersonRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, addresses, sp.GetService<ILogger<PersonRepository>>());
+            var locations = new LocationRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, addresses,
+                people, sp.GetService<ILogger<LocationRepository>>());
+            _companies = new CompanyRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, people, locations, sp.GetService<ILogger<CompanyRepository>>());
             _companyFiller = new CompanyFiller();
-            await using var db = dbFactory.CreateDbContext();
-            await db.Database.EnsureDeletedAsync();
-            await db.Database.MigrateAsync();
         }
 
         [Test]

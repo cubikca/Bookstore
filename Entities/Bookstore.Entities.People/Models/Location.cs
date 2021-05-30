@@ -19,7 +19,14 @@ namespace Bookstore.Entities.People.Models
         public Guid? StreetAddressId { get; set; }
         [ForeignKey("StreetAddressId")]
         public virtual Address StreetAddress { get; set; }
-        public virtual IList<LocationContact> Contacts { get; set; }
+
+        private IList<LocationContact> _contacts;
+        public virtual IList<LocationContact> Contacts
+        {
+            get => _contacts ??= new List<LocationContact>();
+            set => _contacts = value;
+        }
+        
         [ForeignKey("CompanyId")]
         public virtual Company Company { get; set; }
     }

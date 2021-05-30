@@ -8,7 +8,9 @@ namespace Bookstore.Domains.People.Repositories
 {
     public interface ISubjectRepository
     {
-        Task<IList<Subject>> FindAllSubjects();
+        Task<Subject> SaveSubject(Subject subject);
+        Task<ICollection<Subject>> FindAllSubjects();
         Task<Subject> FindSubjectById(Guid subjectId);
+        Task<bool> RemoveSubject(Guid subjectId);
     }
 }
