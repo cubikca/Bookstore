@@ -12,10 +12,6 @@ namespace Bookstore.Domains.People.Models
         public override string FullName => CompanyName;
         public List<Location> Locations { get; set; }
 
-        public Company()
-        {
-        }
-
         public override Address MailingAddress
         {
             get

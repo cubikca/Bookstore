@@ -9,7 +9,7 @@ namespace Bookstore.Domains.People.Repositories
     public interface IPersonRepository
     {
         Task<Person> SavePerson(Person person);
-        Task<IList<Person>> FindAllPeople();
+        Task<ICollection<Person>> FindAllPeople();
         Task<Person> FindPersonById(Guid personId);
         Task<bool> RemovePerson(Guid personId);
     }

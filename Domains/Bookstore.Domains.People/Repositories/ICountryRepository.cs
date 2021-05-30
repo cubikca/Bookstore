@@ -11,12 +11,7 @@ namespace Bookstore.Domains.People.Repositories
     {
         Task<Country> SaveCountry(Country country);
         Task<Country> FindCountryById(Guid countryId);
-        Task<IList<Country>> FindAllCountries();
+        Task<ICollection<Country>> FindAllCountries();
         Task<bool> RemoveCountry(Guid countryId);
-
-        Task<Province> SaveProvince(Province province);
-        Task<Province> FindProvinceById(Guid provinceId);
-        Task<IList<Province>> FindProvincesByCountryId(Guid countryId);
-        Task<bool> RemoveProvince(Guid provinceId);
     }
 }

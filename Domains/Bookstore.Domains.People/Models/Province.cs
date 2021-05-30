@@ -6,13 +6,14 @@ namespace Bookstore.Domains.People.Models
     public class Province : ISerializable, IEquatable<Province>
     {
         public Guid Id { get; set; }
-        public virtual Country Country { get; set; }
+        public Country Country { get; set; }
         public string Name { get; set; }
         public string Abbreviation { get; set; }
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             info.AddValue("Id", Id);
+            info.AddValue("Country", Country);
             info.AddValue("Name", Name);
             info.AddValue("Abbreviation", Abbreviation);
         }

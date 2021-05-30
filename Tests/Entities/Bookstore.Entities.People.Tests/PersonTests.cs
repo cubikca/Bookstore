@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Repositories;
-using Bookstore.Entities.People;
 using Bookstore.Entities.People.AutoMapper;
 using Bookstore.Entities.People.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -19,36 +14,38 @@ namespace Bookstore.Entities.People.Tests
     [TestFixture]
     public class PersonTests
     {
-        private ILogger<PersonRepository> _logger;
         private IMapper _mapper;
         private IPersonRepository _people;
+        private IProvinceRepository _provinces;
+        private ICountryRepository _countries;
+        private IAddressRepository _addresses;
         private PersonFiller _personFiller;
 
         [OneTimeSetUp]
-        public async Task OneTimeSetUp()
+        public void OneTimeSetUp()
         {
             var services = new ServiceCollection();
+            services.AddLogging(cfg => cfg.AddConsole());
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                opt.UseSqlServer(
-                        "Data Source=sqlserver;Initial Catalog=PeoplePersonTests;User Id=brian;Password=development");
+                var connectionString = "server=localhost;user=brian;password=development;database=PeopleEntitiesTests";
+                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             var sp = services.BuildServiceProvider();
             var dbFactory = sp.GetService<IDbContextFactory<PeopleContext>>();
             Assert.NotNull(dbFactory);
-            using var loggerFactory = LoggerFactory.Create(cfg => cfg.AddConsole());
-            _logger = loggerFactory.CreateLogger<PersonRepository>();
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<DefaultProfile>();
             });
             _mapper = mapperConfig.CreateMapper();
-            _people = new PersonRepository(dbFactory, _mapper, _logger);
+            _provinces = new ProvinceRepository(dbFactory, _mapper, sp.GetService<ILogger<ProvinceRepository>>());
+            _countries = new CountryRepository(dbFactory, _mapper, _provinces,
+                sp.GetService<ILogger<CountryRepository>>());
+            _addresses = new AddressRepository(dbFactory, _mapper, _countries, _provinces, sp.GetService<ILogger<AddressRepository>>());
+            _people = new PersonRepository(dbFactory, _mapper, _addresses, sp.GetService<ILogger<PersonRepository>>());
             _personFiller = new PersonFiller();
-            await using var db = dbFactory.CreateDbContext();
-            await db.Database.EnsureDeletedAsync();
-            await db.Database.MigrateAsync();
         }
 
         [Test]
@@ -58,6 +55,11 @@ namespace Bookstore.Entities.People.Tests
             var created = await _people.SavePerson(person);
             Assert.AreNotSame(person, created);
             Assert.AreEqual(person, created);
+            created = _personFiller.FillPerson();
+            created.Id = person.Id;
+            var updated = await _people.SavePerson(created);
+            Assert.AreNotSame(created, updated);
+            Assert.AreEqual(created, updated);
         }
 
         [Test]

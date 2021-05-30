@@ -10,6 +10,7 @@ namespace Bookstore.Domains.People.Models
         public string Street2 { get; set; }
         public string City { get; set; }
         public Province Province { get; set; }
+        public Country Country { get; set; }
         public string PostalCode { get; set; }
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -19,6 +20,7 @@ namespace Bookstore.Domains.People.Models
             info.AddValue("Street2", Street2);
             info.AddValue("City", City);
             info.AddValue("Province", Province);
+            info.AddValue("Country", Country);
             info.AddValue("PostalCode", PostalCode);
         }
 
@@ -26,7 +28,7 @@ namespace Bookstore.Domains.People.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && Street1 == other.Street1 && Street2 == other.Street2 && City == other.City && PostalCode == other.PostalCode && Equals(Province, other.Province);
+            return Id.Equals(other.Id) && Street1 == other.Street1 && Street2 == other.Street2 && City == other.City && PostalCode == other.PostalCode && Equals(Province, other.Province) && Equals(Country, other.Country);
         }
 
         public override bool Equals(object obj)
@@ -36,7 +38,7 @@ namespace Bookstore.Domains.People.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Id, Street1, Street2, City, Province, PostalCode);
+            return HashCode.Combine(Id, Street1, Street2, City, Province, Country, PostalCode);
         }
     }
 }

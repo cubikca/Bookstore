@@ -21,57 +21,13 @@ namespace Bookstore.Entities.People.Repositories
     {
         private readonly ILogger<CompanyRepository> _logger;
         private readonly IPersonRepository _people;
+        private readonly ILocationRepository _locations;
 
-        public CompanyRepository(IDbContextFactory<PeopleContext> dbFactory, IMapper mapper, ILogger<CompanyRepository> logger, IPersonRepository people) : base(dbFactory, mapper)
+        public CompanyRepository(IDbContextFactory<PeopleContext> dbFactory, IMapper mapper, IPersonRepository people, ILocationRepository locations, ILogger<CompanyRepository> logger) : base(dbFactory, mapper)
         {
             _logger = logger;
             _people = people;
-        }
-
-        private async Task SaveLocation(PeopleContext db, Company entity, Domains.People.Models.Location location)
-        {
-            var locationEntity = await db.Locations.SingleOrDefaultAsync(l => l.Id == location.Id) 
-                                 ?? new Location {Id = location.Id, Company = entity};
-            if (location.MailingAddress != null)
-            {
-                locationEntity.MailingAddress ??= new Address();
-                Mapper.Map(location.MailingAddress, locationEntity.MailingAddress);
-            }
-            else if (locationEntity.MailingAddress != null)
-            {
-                db.Addresses.Remove(locationEntity.MailingAddress);
-                locationEntity.MailingAddress = null;
-            }
-            if (location.StreetAddress != null)
-            {
-                locationEntity.StreetAddress ??= new Address();
-                Mapper.Map(location.StreetAddress, locationEntity.StreetAddress);
-            }
-            else if (locationEntity.StreetAddress != null)
-            {
-                db.Addresses.Remove(locationEntity.StreetAddress);
-                locationEntity.StreetAddress = null;
-            }
-            location.Contacts ??= new List<Domains.People.Models.Person>();
-            location.Contacts.ForEach(contact =>
-            {
-                contact = _people.SavePerson(contact).GetAwaiter().GetResult();
-                var locationContact = new LocationContact {ContactId = contact.Id, Location = locationEntity};
-                locationEntity.Contacts ??= new List<LocationContact>();
-                db.LocationContacts.Add(locationContact);
-                locationEntity.Contacts.Add(locationContact);
-            });
-            locationEntity.Primary = location.Primary;
-            if (entity.Locations.All(l => l.Id != locationEntity.Id))
-            {
-                await db.Locations.AddAsync(locationEntity);
-                entity.Locations.Add(locationEntity);
-            }
-            foreach (var contact in locationEntity.Contacts.ToList().Where(contact => location.Contacts.All(c => c.Id != contact.ContactId)))
-            {
-                db.People.Remove(contact.Contact);
-                db.LocationContacts.Remove(contact);
-            }
+            _locations = locations;
         }
 
         public async Task<Domains.People.Models.Company> SaveCompany(Domains.People.Models.Company company)
@@ -99,7 +55,6 @@ namespace Bookstore.Entities.People.Repositories
                         entity.EmailAddress = null;
                         await db.SaveChangesAsync();
                     }
-
                     if (entity.EmailAddress == null)
                     {
                         entity.EmailAddress = new EmailAddress {Id = company.EmailAddress.Id};
@@ -120,7 +75,6 @@ namespace Bookstore.Entities.People.Repositories
                         db.PhoneNumbers.Remove(entity.PhoneNumber);
                         await db.SaveChangesAsync();
                     }
-
                     if (entity.PhoneNumber == null)
                     {
                         entity.PhoneNumber = new PhoneNumber {Id = company.PhoneNumber.Id};
@@ -154,11 +108,17 @@ namespace Bookstore.Entities.People.Repositories
                     await db.SaveChangesAsync();
                 }
                 company.Locations ??= new List<Domains.People.Models.Location>();
-                company.Locations.ForEach(location => SaveLocation(db, entity, location).Wait());
+                company.Locations.ForEach(async location =>
+                {
+                    var saved = await _locations.SaveLocation(location);
+                    await db.Entry(entity).ReloadAsync();
+                    entity.Locations.Add(db.Locations.Single(l => l.Id == saved.Id));
+                    await db.SaveChangesAsync();
+                });
                 entity.Locations.ToList().ForEach(location =>
                 {
                     if (company.Locations.All(l => l.Id != location.Id))
-                        db.Locations.Remove(location);
+                        _locations.RemoveLocation(location.Id);
                 });
                 if (add) await db.Companies.AddAsync(entity);
                 await db.SaveChangesAsync();

@@ -74,6 +74,8 @@ namespace Bookstore.Entities.People.Tests
                 .OnProperty(p => p.Title).Use(new MnemonicString(1, 2, 3))
                 .OnProperty(p => p.PhoneNumber).Use(PhoneSetup)
                 .OnProperty(p => p.OnlinePresence).Use(OnlineSetup)
+                .OnProperty(p => p.MailingAddress).Use(AddressSetup)
+                .OnProperty(p => p.StreetAddress).Use(AddressSetup)
                 .Result;
             Filler<Location> lFiller = new Filler<Location>();
             LocationSetup = lFiller.Setup()

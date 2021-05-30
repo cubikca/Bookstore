@@ -36,12 +36,16 @@ namespace Bookstore.Services.Workers.People
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                opt.UseSqlServer("Data Source=sqlserver;User Id=brian;Password=development;Initial Catalog=PeopleDevelopment");
+                var connectionString = "server=mysql;user=brian;password=development;database=PeopleDevelopment";
+                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
             services.AddScoped<ICountryRepository, CountryRepository>();
+            services.AddScoped<IProvinceRepository, ProvinceRepository>();
+            services.AddScoped<IAddressRepository, AddressRepository>();
+            services.AddScoped<ILocationRepository, LocationRepository>();
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<DefaultProfile>();
