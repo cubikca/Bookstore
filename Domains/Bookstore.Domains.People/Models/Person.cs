@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
@@ -16,11 +17,11 @@ namespace Bookstore.Domains.People.Models
         /// <summary>
         /// All of the names for this person except the family name
         /// </summary>
-        public List<string> GivenNames { get; set; }
+        public IList<string> GivenNames { get; set; }
         /// <summary>
         /// Additional conversational names for this person
         /// </summary>
-        public List<string> KnownAs { get; set; }
+        public IList<string> KnownAs { get; set; }
         /// <summary>
         /// Family name for this person
         /// </summary>

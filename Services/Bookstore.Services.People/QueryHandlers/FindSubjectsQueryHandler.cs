@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,35 +8,34 @@ using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
-using RabbitWarren;
-using RabbitWarren.ClientHandlers;
+using MassTransit;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
-    public class FindSubjectsQueryHandler : QueryHandlerBase<FindSubjectsQuery, FindSubjectsQueryResult, Subject>
+    public class FindSubjectsQueryHandler : IConsumer<FindSubjectsQuery>
     {
         private readonly ISubjectRepository _subjects;
 
-        public FindSubjectsQueryHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, ISubjectRepository subjects) : base(connection, mqOptions)
+        public FindSubjectsQueryHandler(ISubjectRepository subjects)
         {
             _subjects = subjects;
         }
 
-        public override async Task<FindSubjectsQueryResult> Handle(FindSubjectsQuery request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<FindSubjectsQuery> context)
         {
-            var result = new FindSubjectsQueryResult {CorrelationId = request.Id, Results = new List<Subject>()};
+            var result = new FindSubjectsQueryResult {Results = new List<Subject>()};
             try
             {
-                if (request.SubjectId.HasValue)
+                if (context.Message.SubjectId.HasValue)
                 {
-                    var subject = await _subjects.FindSubjectById(request.SubjectId.Value);
+                    var subject = await _subjects.FindSubjectById(context.Message.SubjectId.Value);
                     if (subject != null)
                         result.Results.Add(subject);
                 }
                 else
                 {
                     var subjects = await _subjects.FindAllSubjects();
-                    result.Results = subjects;
+                    result.Results = subjects.ToList();
                 }
                 result.Success = true;
             }
@@ -44,7 +44,7 @@ namespace Bookstore.Services.People.QueryHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Domains\Bookstore.Domains.Book\Bookstore.Domains.Book.csproj" />
+      <ProjectReference Include="..\..\Entities\Bookstore.Entities.Book\Bookstore.Entities.Book.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MassTransit" Version="7.1.8" />
+    </ItemGroup>
+
+</Project>

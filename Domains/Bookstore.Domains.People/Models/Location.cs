@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
@@ -12,7 +13,7 @@ namespace Bookstore.Domains.People.Models
         public bool Primary { get; set; }
         public Address MailingAddress { get; set; }
         public Address StreetAddress { get; set; }
-        public List<Person> Contacts { get; set; }
+        public ICollection<Person> Contacts { get; set; }
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             info.AddValue("Id", Id);
@@ -29,7 +30,7 @@ namespace Bookstore.Domains.People.Models
             var contactsEqual = Contacts != null && other.Contacts != null
                 ? Contacts.All(other.Contacts.Contains) && other.Contacts.All(Contacts.Contains)
                 : (Contacts?.Count ?? 0) == (other.Contacts?.Count ?? 0);
-            return Id.Equals(other.Id) && Primary == other.Primary && Equals(MailingAddress, other.MailingAddress) && Equals(StreetAddress, other.StreetAddress) && contactsEqual;
+            return Id == other.Id && Primary == other.Primary && Equals(MailingAddress, other.MailingAddress) && Equals(StreetAddress, other.StreetAddress) && contactsEqual;
         }
 
         public override bool Equals(object obj)

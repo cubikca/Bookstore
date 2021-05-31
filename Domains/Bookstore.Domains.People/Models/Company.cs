@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
@@ -10,10 +11,11 @@ namespace Bookstore.Domains.People.Models
         public string CompanyName { get; set; }
         public override string Name => CompanyName;
         public override string FullName => CompanyName;
-        public List<Location> Locations { get; set; }
+        public IList<Location> Locations { get; set; }
 
         public Company()
         {
+            Locations = new List<Location>();
         }
 
         public override Address MailingAddress

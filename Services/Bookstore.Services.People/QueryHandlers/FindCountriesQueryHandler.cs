@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,35 +9,34 @@ using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
-using RabbitWarren;
-using RabbitWarren.ClientHandlers;
+using MassTransit;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
-    public class FindCountriesQueryHandler : QueryHandlerBase<FindCountriesQuery, FindCountriesQueryResult, Country>
+    public class FindCountriesQueryHandler : IConsumer<FindCountriesQuery> 
     {
         private readonly ICountryRepository _countries;
 
-        public FindCountriesQueryHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, ICountryRepository countries) : base(connection, mqOptions)
+        public FindCountriesQueryHandler(ICountryRepository countries)
         {
             _countries = countries;
         }
 
-        public override async Task<FindCountriesQueryResult> Handle(FindCountriesQuery request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<FindCountriesQuery> context)
         {
-            var result = new FindCountriesQueryResult {CorrelationId = request.Id, Results = new List<Country>()};
+            var result = new FindCountriesQueryResult {Results = new List<Country>()};
             try
             {
-                if (request.CountryId.HasValue)
+                if (context.Message.CountryAbbreviation != null)
                 {
-                    var country = await _countries.FindCountryById(request.CountryId.Value);
+                    var country = await _countries.FindCountryByAbbreviation(context.Message.CountryAbbreviation);
                     if (country != null)
                         result.Results.Add(country);
                 }
                 else
                 {
                     var countries = await _countries.FindAllCountries();
-                    result.Results = countries;
+                    result.Results = countries.ToList();
                 }
             }
             catch (Exception ex)
@@ -44,7 +44,7 @@ namespace Bookstore.Services.People.QueryHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

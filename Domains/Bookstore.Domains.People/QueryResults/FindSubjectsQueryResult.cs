@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Bookstore.Domains.People.Models;
-using RabbitWarren.Messaging;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.QueryResults
 {

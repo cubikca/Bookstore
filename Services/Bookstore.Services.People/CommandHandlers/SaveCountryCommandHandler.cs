@@ -1,39 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Repositories;
-using RabbitWarren;
-using RabbitWarren.ClientHandlers;
+using MassTransit;
 
 namespace Bookstore.Services.People.CommandHandlers
 {
-    public class SaveCountryCommandHandler : CommandHandlerBase<SaveCountryCommand, SaveCountryCommandResult>
+    public class SaveCountryCommandHandler : IConsumer<SaveCountryCommand>
     {
         private readonly ICountryRepository _countries;
 
-        public SaveCountryCommandHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, ICountryRepository countries) : base(connection, mqOptions)
+        public SaveCountryCommandHandler(ICountryRepository countries)
         {
             _countries = countries;
         }
 
-        public override async Task<SaveCountryCommandResult> Handle(SaveCountryCommand request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<SaveCountryCommand> context)
         {
-            var result = new SaveCountryCommandResult {CorrelationId = request.Id};
+            var result = new SaveCountryCommandResult();
             try
             {
-                var country = await _countries.SaveCountry(request.Country);
+                var country = await _countries.SaveCountry(context.Message.Country);
                 result.Country = country;
+                result.Success = true;
             }
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

@@ -27,6 +27,7 @@ namespace Bookstore.Entities.People
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<LocationContact>().HasKey(lc => new {lc.LocationId, lc.ContactId});
+            modelBuilder.Entity<Province>().HasKey(p => new {p.Abbreviation, p.CountryAbbreviation});
         }
     }
 }

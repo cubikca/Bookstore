@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
@@ -10,16 +11,16 @@ namespace Bookstore.Domains.People.Models
      * Many systems allow both people and companies to fill various roles (client, customer, supplier, etc.)
      * We don't want to treat people and companies differently in cases where they fill the same role
      */
-    public class Subject : ISerializable, IEquatable<Subject>
+    public abstract class Subject
     {
         public Guid Id { get; set; }
-        public virtual string Name { get; protected set; }
-        public virtual string FullName { get; protected set; }
+        public virtual string Name { get; set; }
+        public virtual string FullName { get; set; }
         public virtual Address StreetAddress { get; set; }
         public virtual Address MailingAddress { get; set; }
-        public virtual EmailAddress EmailAddress { get; set; }
-        public virtual PhoneNumber PhoneNumber { get; set; }
-        public virtual OnlinePresence OnlinePresence { get; set; }
+        public EmailAddress EmailAddress { get; set; }
+        public PhoneNumber PhoneNumber { get; set; }
+        public OnlinePresence OnlinePresence { get; set; }
 
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
@@ -29,21 +30,6 @@ namespace Bookstore.Domains.People.Models
             info.AddValue("EmailAddress", EmailAddress);
             info.AddValue("PhoneNumber", PhoneNumber);
             info.AddValue("OnlinePresence", OnlinePresence);
-        }
-
-        public bool Equals(Subject other)
-        {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && Name == other.Name && FullName == other.FullName && Equals(StreetAddress, other.StreetAddress) && Equals(MailingAddress, other.MailingAddress) && Equals(EmailAddress, other.EmailAddress) && Equals(PhoneNumber, other.PhoneNumber) && Equals(OnlinePresence, other.OnlinePresence);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((Subject) obj);
         }
 
         public override int GetHashCode()

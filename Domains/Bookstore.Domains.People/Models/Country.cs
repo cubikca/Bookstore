@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
     public class Country : ISerializable, IEquatable<Country>
     {
-        public Guid Id { get; set; }
         public string Name { get; set; }
         public string Abbreviation { get; set; }
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("Id", Id);
             info.AddValue("Name", Name);
             info.AddValue("Abbreviation", Abbreviation);
         }
@@ -22,7 +21,7 @@ namespace Bookstore.Domains.People.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && Name == other.Name && Abbreviation == other.Abbreviation;
+            return Name == other.Name && Abbreviation == other.Abbreviation;
         }
 
         public override bool Equals(object obj)
@@ -35,7 +34,7 @@ namespace Bookstore.Domains.People.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Id, Name, Abbreviation);
+            return HashCode.Combine(Name, Abbreviation);
         }
     }
 }

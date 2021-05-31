@@ -11,6 +11,7 @@ namespace Bookstore.Entities.People.Models
         public string Street2 { get; set; }
         public string City { get; set; }
         public virtual Province Province { get; set; }
+        public virtual Country Country { get; set; }
         public string PostalCode { get; set; }
    }
 }

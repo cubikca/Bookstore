@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {

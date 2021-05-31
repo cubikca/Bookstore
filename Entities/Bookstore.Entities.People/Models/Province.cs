@@ -8,14 +8,17 @@ namespace Bookstore.Entities.People.Models
 {
     public class Province
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid Id { get; set; }
-        public Guid CountryId { get; set; }
-        public string Name { get; set; }
         public string Abbreviation { get; set; }
+        public string CountryAbbreviation { get; set; }
+        public string Name { get; set; }
 
-        [ForeignKey("CountryId")]
+        public Province(string abbreviation, string countryAbbreviation)
+        {
+            Abbreviation = abbreviation;
+            CountryAbbreviation = countryAbbreviation;
+        }
+
+        [ForeignKey("CountryAbbreviation")]
         public virtual Country Country { get; set; }
     }
 }

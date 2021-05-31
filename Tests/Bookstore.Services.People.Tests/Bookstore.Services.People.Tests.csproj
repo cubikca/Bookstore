@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MassTransit" Version="7.1.8" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="7.1.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="5.0.0" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
@@ -16,7 +18,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Domains\Bookstore.Domains.People\Bookstore.Domains.People.csproj" />
-    <ProjectReference Include="..\..\RabbitWarren\src\RabbitWarren\RabbitWarren.csproj" />
   </ItemGroup>
 
 </Project>

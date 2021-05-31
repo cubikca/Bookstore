@@ -8,7 +8,13 @@ namespace Bookstore.Entities.People.Models
     public class Company : Subject
     {
         public string CompanyName { get; set; }
-        public virtual List<Location> Locations { get; set; }
+        private ICollection<Location> _locations;
+
+        public virtual ICollection<Location> Locations
+        {
+            get => _locations ??= new List<Location>();
+            set => _locations = value;
+        }
         public override string Name => CompanyName;
         public override string FullName => CompanyName;
         public override Address MailingAddress => Locations.FirstOrDefault(l => l.Primary)?.MailingAddress;

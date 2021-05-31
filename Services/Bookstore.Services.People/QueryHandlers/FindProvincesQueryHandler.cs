@@ -9,36 +9,35 @@ using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
-using RabbitWarren;
-using RabbitWarren.ClientHandlers;
+using MassTransit;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
-    public class FindProvincesQueryHandler : QueryHandlerBase<FindProvincesQuery, FindProvincesQueryResult, Province>
+    public class FindProvincesQueryHandler : IConsumer<FindProvincesQuery>
     {
-        private readonly ICountryRepository _countries;
+        private readonly IProvinceRepository _provinces;
 
-        public FindProvincesQueryHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, ICountryRepository countries) : base(connection, mqOptions)
+        public FindProvincesQueryHandler(IProvinceRepository provinces)
         {
-            _countries = countries;
+            _provinces = provinces;
         }
 
-        public override async Task<FindProvincesQueryResult> Handle(FindProvincesQuery request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<FindProvincesQuery> context)
         {
             var queryResults = new List<Province>();
-            var result = new FindProvincesQueryResult {CorrelationId = request.Id, Results = queryResults};
+            var result = new FindProvincesQueryResult {Results = queryResults};
             try
             {
-                if (request.ProvinceId.HasValue && request.CountryId.HasValue) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
-                if (!request.ProvinceId.HasValue && !request.CountryId.HasValue) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
-                if (request.ProvinceId.HasValue)
+                if (context.Message.ProvinceAbbreviation != null && context.Message.CountryAbbreviation != null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
+                if (context.Message.ProvinceAbbreviation == null && context.Message.CountryAbbreviation == null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
+                if (context.Message.ProvinceAbbreviation != null)
                 {
-                    var province = await _countries.FindProvinceById(request.ProvinceId.Value);
+                    var province = await _provinces.FindProvinceByAbbreviation(context.Message.ProvinceAbbreviation);
                     if (province != null) queryResults.Add(province);
                 }
-                if (request.CountryId.HasValue)
+                if (context.Message.CountryAbbreviation != null)
                 {
-                    var provinces = await _countries.FindProvincesByCountryId(request.CountryId.Value);
+                    var provinces = await _provinces.FindProvincesByCountryAbbreviation(context.Message.CountryAbbreviation);
                     queryResults.AddRange(provinces ?? Enumerable.Empty<Province>());
                 }
             }
@@ -47,7 +46,7 @@ namespace Bookstore.Services.People.QueryHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }

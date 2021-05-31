@@ -6,7 +6,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Domains\Bookstore.Domains.People\Bookstore.Domains.People.csproj" />
-    <ProjectReference Include="..\..\RabbitWarren\src\RabbitWarren\RabbitWarren.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="7.1.8" />
   </ItemGroup>
 
 </Project>

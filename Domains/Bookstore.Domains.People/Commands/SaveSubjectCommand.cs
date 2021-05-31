@@ -4,12 +4,13 @@ using System.Text;
 using System.Windows.Input;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Models;
-using RabbitWarren.Messaging;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Commands
 {
-    public class SaveSubjectCommand : Command<SaveSubjectCommandResult>
+    public class SaveSubjectCommand 
     {
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Objects)]
         public Subject Subject { get; set; }
     }
 }

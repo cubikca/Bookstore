@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <UserSecretsId>dotnet-Bookstore.Services.Book.Worker-997F2131-0DFB-4B45-B634-C5D5D7A21D2D</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.1.8" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="7.1.8" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.6" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="5.0.6" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.6" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Entities\Bookstore.Entities.Book\Bookstore.Entities.Book.csproj" />
+    </ItemGroup>
+</Project>

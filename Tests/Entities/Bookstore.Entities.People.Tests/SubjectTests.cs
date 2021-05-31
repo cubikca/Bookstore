@@ -23,10 +23,8 @@ namespace Bookstore.Entities.People.Tests
         // This is only for testing purposes; there is very loose coupling between Subjects and their corresponding subtypes
         private IPersonRepository _people;
         private ICompanyRepository _companies;
+        private IAddressRepository _addresses;
         private IMapper _mapper;
-        private ILogger<PersonRepository> _personLogger;
-        private ILogger<CompanyRepository> _companyLogger;
-        private ILogger<SubjectRepository> _subjectLogger;
         private CompanyFiller _companyFiller;
         private PersonFiller _personFiller;
 
@@ -34,16 +32,15 @@ namespace Bookstore.Entities.People.Tests
         public async Task OneTimeSetUp()
         {
             var services = new ServiceCollection();
+            services.AddLogging(cfg => cfg.AddConsole());
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                opt.UseSqlServer("Data Source=(local);Initial Catalog=PeopleSubjectTests;User Id=brian;Password=development");
+                var connectionString = "server=localhost;user=brian;password=development;database=PeopleEntitiesTests";
+                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             services.AddLogging(opt => opt.AddConsole());
             var sp = services.BuildServiceProvider();
-            _personLogger = sp.GetService<ILogger<PersonRepository>>();
-            _companyLogger = sp.GetService<ILogger<CompanyRepository>>();
-            _subjectLogger = sp.GetService<ILogger<SubjectRepository>>();
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<DefaultProfile>();
@@ -53,13 +50,12 @@ namespace Bookstore.Entities.People.Tests
             Assert.NotNull(dbFactory);
             await using var db = dbFactory.CreateDbContext();
             Assert.NotNull(db);
-            _people = new PersonRepository(dbFactory, _mapper, _personLogger);
-            _companies = new CompanyRepository(dbFactory, _mapper, _companyLogger, _people);
-            _subjects = new SubjectRepository(dbFactory, _mapper, _subjectLogger);
+            _addresses = new AddressRepository(dbFactory, _mapper, sp.GetService<ILogger<AddressRepository>>());
+            _people = new PersonRepository(dbFactory, _mapper, _addresses, sp.GetService<ILogger<PersonRepository>>());
+            _companies = new CompanyRepository(dbFactory, _mapper, _addresses, _people, sp.GetService<ILogger<CompanyRepository>>());
+            _subjects = new SubjectRepository(dbFactory, _mapper, _people, _companies, sp.GetService<ILogger<SubjectRepository>>());
             _companyFiller = new CompanyFiller();
             _personFiller = new PersonFiller();
-            await db.Database.EnsureDeletedAsync();
-            await db.Database.MigrateAsync();
         }
 
         [Test]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,35 +8,34 @@ using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
-using RabbitWarren;
-using RabbitWarren.ClientHandlers;
+using MassTransit;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
-    public class FindPeopleQueryHandler : QueryHandlerBase<FindPeopleQuery, FindPeopleQueryResult, Person>
+    public class FindPeopleQueryHandler : IConsumer<FindPeopleQuery>
     {
         private readonly IPersonRepository _people;
 
-        public FindPeopleQueryHandler(RabbitMQConnection connection, RabbitMQOptions mqOptions, IPersonRepository people) : base(connection, mqOptions)
+        public FindPeopleQueryHandler(IPersonRepository people)
         {
             _people = people;
         }
 
-        public override async Task<FindPeopleQueryResult> Handle(FindPeopleQuery request, CancellationToken cancellationToken)
+        public async Task Consume(ConsumeContext<FindPeopleQuery> context)
         {
-            var result = new FindPeopleQueryResult {CorrelationId = request.Id, Results = new List<Person>()};
+            var result = new FindPeopleQueryResult {Results = new List<Person>()};
             try
             {
-                if (request.PersonId.HasValue)
+                if (context.Message.PersonId.HasValue)
                 {
-                    var person = await _people.FindPersonById(request.PersonId.Value);
+                    var person = await _people.FindPersonById(context.Message.PersonId.Value);
                     if (person != null)
                         result.Results.Add(person);
                 }
                 else
                 {
                     var people = await _people.FindAllPeople();
-                    result.Results = people;
+                    result.Results = people.ToList();
                 }
             }
             catch (Exception ex)
@@ -43,7 +43,7 @@ namespace Bookstore.Services.People.QueryHandlers
                 result.Error = ex.GetBaseException().Message;
                 result.Exception = ex;
             }
-            return result;
+            await context.RespondAsync(result);
         }
     }
 }
