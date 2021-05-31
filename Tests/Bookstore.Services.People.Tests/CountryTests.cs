@@ -13,6 +13,7 @@ using GreenPipes;
 using MassTransit;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using Tynamix.ObjectFiller;
 
@@ -42,6 +43,7 @@ namespace Bookstore.Services.People.Tests
                     host.Username("brian");
                     host.Password("development");
                 });
+                rmq.UseBsonSerializer();
             });
             _saveCountryClient = _busControl.CreateRequestClient<SaveCountryCommand>();
             _findCountriesClient = _busControl.CreateRequestClient<FindCountriesQuery>();
@@ -181,8 +183,7 @@ namespace Bookstore.Services.People.Tests
 
             // province 1 should be deleted when country is deleted
             var removeCountryCommand = new RemoveCountryCommand {CountryAbbreviation = country.Abbreviation};
-            var removeCountryResponse =
-                await removeCountryClient.GetResponse<RemoveCountryCommandResult>(removeCountryCommand);
+            await removeCountryClient.GetResponse<RemoveCountryCommandResult>(removeCountryCommand);
             var findCountryQuery = new FindCountriesQuery {CountryAbbreviation = country.Abbreviation};
             var findProvince1Query = new FindProvincesQuery {ProvinceAbbreviation = province1.Abbreviation};
             var findCountryTask = findCountryClient.GetResponse<FindCountriesQueryResult>(findCountryQuery);

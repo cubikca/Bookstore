@@ -10,6 +10,7 @@ using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using MassTransit;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Bookstore.Services.People.Tests
@@ -38,6 +39,7 @@ namespace Bookstore.Services.People.Tests
                     host.Username("brian");
                     host.Password("development");
                 });
+                rmq.UseBsonSerializer();
             });
             await _busControl.StartAsync();
             _saveSubjectClient = _busControl.CreateRequestClient<SaveSubjectCommand>();
@@ -105,14 +107,11 @@ namespace Bookstore.Services.People.Tests
             var findAllTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findAllQuery);
             var findPersonTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findPersonQuery);
             var findCompanyTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findCompanyQuery);
-
-            // parallel again
             await Task.WhenAll(findAllTask, findPersonTask, findCompanyTask);
 
             var findAllMessage = findAllTask.Result.Message;
             var findPersonMessage = findPersonTask.Result.Message;
             var findCompanyMessage = findCompanyTask.Result.Message;
-            ;
 
             // check for errors
             if (findAllMessage.Error != null)

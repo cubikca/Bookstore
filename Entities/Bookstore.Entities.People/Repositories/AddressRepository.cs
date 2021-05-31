@@ -113,6 +113,8 @@ namespace Bookstore.Entities.People.Repositories
              */
             try
             {
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var entity = await db.Addresses.SingleOrDefaultAsync(a => a.Id == addressId);
                 if (entity == null) return false;
@@ -132,6 +134,7 @@ namespace Bookstore.Entities.People.Repositories
                 });
                 db.Addresses.Remove(entity);
                 await db.SaveChangesAsync();
+                scope.Complete();
                 return true;
             }
             catch (Exception ex)
@@ -145,9 +148,8 @@ namespace Bookstore.Entities.People.Repositories
         {
             try
             {
-                using var scope = Transaction.Current != null
-                    ? new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled)
-                    : new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var entity = await db.Countries.SingleOrDefaultAsync(c => c.Abbreviation == country.Abbreviation);
                 if (entity == null)
@@ -201,24 +203,24 @@ namespace Bookstore.Entities.People.Repositories
         {
             try
             {
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                await db.Database.BeginTransactionAsync();
                 var entity = await db.Countries.SingleOrDefaultAsync(c => c.Abbreviation == abbreviation);
                 if (entity == null) return false;
                 // like addresses, provinces must be disconnected from the country first and then deleted as part of
                 // the country deletion
-                var provinces = await db.Provinces.Where(p => p.Country.Abbreviation == abbreviation).ToListAsync();
                 var addresses = await db.Addresses.Where(a => a.Country.Abbreviation == abbreviation).ToListAsync();
+                foreach (var address in addresses)
+                    address.Country = null;
+                await db.SaveChangesAsync();
+                var provinces = await db.Provinces.Where(p => p.Country.Abbreviation == abbreviation).ToListAsync();
                 foreach (var province in provinces)
                     province.Country = null;
                 await db.SaveChangesAsync();
-                foreach (var province in provinces)
-                    await RemoveProvince(province.Abbreviation);
-                foreach (var address in addresses)
-                    address.Country = null;
                 db.Countries.Remove(entity);
                 await db.SaveChangesAsync();
-                await db.Database.CommitTransactionAsync();
+                scope.Complete();
                 return true;
             }
             catch (Exception ex)
@@ -232,7 +234,6 @@ namespace Bookstore.Entities.People.Repositories
         {
             try
             {
-                Province result = null;
                 if (province.Country == null) throw new ArgumentException(nameof(province.Country));
                 using var scope = new TransactionScope(TransactionScopeOption.Required,
                     TransactionScopeAsyncFlowOption.Enabled);
@@ -252,7 +253,7 @@ namespace Bookstore.Entities.People.Repositories
                 }
                 Mapper.Map(province, entity);
                 await db.SaveChangesAsync();
-                result = await FindProvinceByAbbreviation(entity.Abbreviation);
+                var result = await FindProvinceByAbbreviation(entity.Abbreviation);
                 scope.Complete();
                 return result;
             }
@@ -311,14 +312,18 @@ namespace Bookstore.Entities.People.Repositories
         {
             try
             {
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var entity = await db.Provinces.SingleOrDefaultAsync(p => p.Abbreviation == abbreviation);
+                if (entity == null) return false;
                 // clear references to this Province
                 var addresses = await db.Addresses.Where(p => p.Province.Abbreviation == abbreviation).ToListAsync();
                 foreach (var address in addresses)
                     address.Province = null;
                 db.Provinces.Remove(entity);
                 await db.SaveChangesAsync();
+                scope.Complete();
                 return true;
             }
             catch (Exception ex)

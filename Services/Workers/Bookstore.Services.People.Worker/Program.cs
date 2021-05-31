@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -16,10 +17,12 @@ using Bookstore.Entities.People.AutoMapper;
 using Bookstore.Entities.People.Repositories;
 using Bookstore.Services.People.CommandHandlers;
 using MassTransit;
+using MassTransit.Serialization;
 using MediatR;
 using MediatR.Extensions.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Bookstore.Services.Workers.People
 {

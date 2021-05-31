@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
@@ -10,7 +11,7 @@ namespace Bookstore.Domains.People.Models
      * Many systems allow both people and companies to fill various roles (client, customer, supplier, etc.)
      * We don't want to treat people and companies differently in cases where they fill the same role
      */
-    public abstract class Subject : ISerializable
+    public abstract class Subject
     {
         public Guid Id { get; set; }
         public virtual string Name { get; set; }

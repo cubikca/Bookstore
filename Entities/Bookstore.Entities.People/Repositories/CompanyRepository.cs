@@ -134,28 +134,29 @@ namespace Bookstore.Entities.People.Repositories
         private async Task SetCompanyLocations(PeopleContext db, Company entity, Domains.People.Models.Company model)
         {
              model.Locations ??= new List<Domains.People.Models.Location>();
-             model.Locations.ForEach(location =>
+             var tasks = model.Locations.Select(async location =>
              {
-                 var locationEntity = db.Locations.SingleOrDefault(l => l.Id == location.Id);
+                 var locationEntity = await db.Locations.SingleOrDefaultAsync(l => l.Id == location.Id);
                  if (locationEntity == null)
                  {
-                     locationEntity = new Location {Id = location.Id, CompanyId = Guid.Empty, Company = entity};
-                     db.Locations.Add(locationEntity);
-                     db.SaveChanges();
+                     locationEntity = new Location {Id = location.Id, CompanyId = entity.Id};
+                     await db.Locations.AddAsync(locationEntity);
+                     await db.SaveChangesAsync();
                  }
                  Mapper.Map(location, locationEntity);
                  if (location.MailingAddress != null)
                  {
-                     var saved = _addresses.SaveAddress(location.MailingAddress).GetAwaiter().GetResult();
+                     var saved = await _addresses.SaveAddress(location.MailingAddress);
                      locationEntity.MailingAddressId = saved.Id;
                  }
                  if (location.StreetAddress != null)
                  {
-                     var saved = _addresses.SaveAddress(location.StreetAddress).GetAwaiter().GetResult();
+                     var saved = await _addresses.SaveAddress(location.StreetAddress);
                      locationEntity.StreetAddressId = saved.Id;
                  }
-                 SetLocationContacts(db, locationEntity, location).GetAwaiter().GetResult();
+                 await SetLocationContacts(db, locationEntity, location);
              });
+             await Task.WhenAll(tasks);
              // remove locations not in the model
              foreach (var location in entity.Locations)
              {
