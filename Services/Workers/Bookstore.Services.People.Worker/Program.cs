@@ -21,6 +21,7 @@ using MassTransit.Serialization;
 using MediatR;
 using MediatR.Extensions.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -33,21 +34,22 @@ namespace Bookstore.Services.Workers.People
             await CreateHostBuilder(args).Build().RunAsync();
         }
 
-        private static void BuildServiceContainer(IServiceCollection services)
+        private static void BuildServiceContainer(IServiceCollection services, IConfiguration config)
         {
             services.AddLogging(cfg => cfg.AddConsole());
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                var connectionString = "server=mysql;user=brian;password=development;database=PeopleDevelopment";
+                var connectionString = config.GetConnectionString("PeopleContext");
                 opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
-            services.AddScoped<ICountryRepository, AddressRepository>();
-            services.AddScoped<IProvinceRepository, AddressRepository>();
+            services.AddScoped<ICountryRepository, CountryRepository>();
+            services.AddScoped<IProvinceRepository, ProvinceRepository>();
             services.AddScoped<IAddressRepository, AddressRepository>();
+            services.AddScoped<ILocationRepository, LocationRepository>();
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<DefaultProfile>();
@@ -74,7 +76,7 @@ namespace Bookstore.Services.Workers.People
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    BuildServiceContainer(services);
+                    BuildServiceContainer(services, hostContext.Configuration);
                     services.AddHostedService<Worker>();
                     services.AddLogging(cfg => cfg.AddConsole());
                 });

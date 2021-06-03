@@ -110,7 +110,7 @@ namespace Bookstore.Services.People.Tests
                 saveProvinceResponse = 
                     await _saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvinceCommand);
                 var province2 = saveProvinceResponse.Message.Province;
-                var findCountryQuery = new FindCountriesQuery {CountryAbbreviation = country.Abbreviation};
+                var findCountryQuery = new FindCountriesQuery {CountryId = country.Id};
                 var findCountryResponse =
                     await _findCountriesClient.GetResponse<FindCountriesQueryResult>(findCountryQuery);
                 var findCountryResult = findCountryResponse.Message;
@@ -119,7 +119,7 @@ namespace Bookstore.Services.People.Tests
                 foundCountry = findCountryResult.Results.Single();
                 Assert.AreNotSame(country, foundCountry);
                 Assert.AreEqual(country, foundCountry);
-                var findProvinceQuery = new FindProvincesQuery {ProvinceAbbreviation = province1?.Abbreviation};
+                var findProvinceQuery = new FindProvincesQuery {ProvinceId = province1?.Id};
                 var findProvinceResponse =
                     await _findProvincesClient.GetResponse<FindProvincesQueryResult>(findProvinceQuery);
                 var findProvinceResult = findProvinceResponse.Message;
@@ -128,7 +128,7 @@ namespace Bookstore.Services.People.Tests
                 Assert.NotNull(foundProvince);
                 Assert.AreNotSame(province1, foundProvince);
                 Assert.AreEqual(province1, foundProvince);
-                var findProvincesQuery = new FindProvincesQuery {CountryAbbreviation = country.Abbreviation};
+                var findProvincesQuery = new FindProvincesQuery {CountryId = country.Id};
                 var findProvincesResponse =
                     await _findProvincesClient.GetResponse<FindProvincesQueryResult>(findProvincesQuery);
                 var findProvincesResult = findProvincesResponse.Message;
@@ -146,16 +146,10 @@ namespace Bookstore.Services.People.Tests
         [Test]
         public async Task TestRemove()
         {
-            var saveCountryClient = _busControl.CreateRequestClient<SaveCountryCommand>();
-            var saveProvinceClient = _busControl.CreateRequestClient<SaveProvinceCommand>();
-            var removeCountryClient = _busControl.CreateRequestClient<RemoveCountryCommand>();
-            var removeProvinceClient = _busControl.CreateRequestClient<RemoveProvinceCommand>();
-            var findProvinceClient = _busControl.CreateRequestClient<FindProvincesQuery>();
-            var findCountryClient = _busControl.CreateRequestClient<FindCountriesQuery>();
             var country = _countryFiller.Create();
             var saveCountryCommand = new SaveCountryCommand {Country = country};
             var saveCountryResponse =
-                await saveCountryClient.GetResponse<SaveCountryCommandResult>(saveCountryCommand);
+                await _saveCountryClient.GetResponse<SaveCountryCommandResult>(saveCountryCommand);
             country = saveCountryResponse.Message.Country;
             var province1 = _provinceFiller.Create();
             var province2 = _provinceFiller.Create();
@@ -163,8 +157,8 @@ namespace Bookstore.Services.People.Tests
             province2.Country = country;
             var saveProvince1Command = new SaveProvinceCommand {Province = province1};
             var saveProvince2Command = new SaveProvinceCommand {Province = province2};
-            var saveProvince1Task = saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvince1Command);
-            var saveProvince2Task = saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvince2Command);
+            var saveProvince1Task = _saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvince1Command);
+            var saveProvince2Task = _saveProvinceClient.GetResponse<SaveProvinceCommandResult>(saveProvince2Command);
             await Task.WhenAll(saveProvince1Task, saveProvince2Task);
             var saveProvince1Response = saveProvince1Task.Result;
             var saveProvince2Response = saveProvince2Task.Result;
@@ -172,22 +166,22 @@ namespace Bookstore.Services.People.Tests
             province2 = saveProvince2Response.Message.Province;
 
             // remove province 2 by itself
-            var removeProvince2Command = new RemoveProvinceCommand {ProvinceAbbreviation = province2.Abbreviation};
+            var removeProvince2Command = new RemoveProvinceCommand {ProvinceId = province2.Id};
             var removeProvince2Response =
-                await removeProvinceClient.GetResponse<RemoveProvinceCommandResult>(removeProvince2Command);
+                await _removeProvinceClient.GetResponse<RemoveProvinceCommandResult>(removeProvince2Command);
             Assert.IsTrue(removeProvince2Response.Message.Success);
-            var findProvince2Query = new FindProvincesQuery {ProvinceAbbreviation = province2.Abbreviation};
+            var findProvince2Query = new FindProvincesQuery {ProvinceId = province2.Id};
             var findProvince2Response =
-                await findProvinceClient.GetResponse<FindProvincesQueryResult>(findProvince2Query);
+                await _findProvincesClient.GetResponse<FindProvincesQueryResult>(findProvince2Query);
             Assert.AreEqual(0, findProvince2Response.Message.Results.Count);
 
             // province 1 should be deleted when country is deleted
-            var removeCountryCommand = new RemoveCountryCommand {CountryAbbreviation = country.Abbreviation};
-            await removeCountryClient.GetResponse<RemoveCountryCommandResult>(removeCountryCommand);
-            var findCountryQuery = new FindCountriesQuery {CountryAbbreviation = country.Abbreviation};
-            var findProvince1Query = new FindProvincesQuery {ProvinceAbbreviation = province1.Abbreviation};
-            var findCountryTask = findCountryClient.GetResponse<FindCountriesQueryResult>(findCountryQuery);
-            var findProvince1Task = findProvinceClient.GetResponse<FindProvincesQueryResult>(findProvince1Query);
+            var removeCountryCommand = new RemoveCountryCommand {CountryId = country.Id};
+            await _removeCountryClient.GetResponse<RemoveCountryCommandResult>(removeCountryCommand);
+            var findCountryQuery = new FindCountriesQuery {CountryId = country.Id};
+            var findProvince1Query = new FindProvincesQuery {ProvinceId = province1.Id};
+            var findCountryTask = _findCountriesClient.GetResponse<FindCountriesQueryResult>(findCountryQuery);
+            var findProvince1Task = _findProvincesClient.GetResponse<FindProvincesQueryResult>(findProvince1Query);
             await Task.WhenAll(findCountryTask, findProvince1Task);
             var findCountryResponse = findCountryTask.Result;
             var findProvince1Response = findProvince1Task.Result;

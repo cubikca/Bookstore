@@ -11,7 +11,7 @@ namespace Bookstore.Entities.Book.Models
     {
         [Key]
         public Guid Id { get; set; }
-        public Guid DetailsId { get; set; }
+        public Guid ProfileId { get; set; }
         public virtual IList<Book> Books { get; set; }
         public decimal Salary { get; set; }
 
@@ -19,7 +19,7 @@ namespace Bookstore.Entities.Book.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && DetailsId.Equals(other.DetailsId) && Salary == other.Salary;
+            return Id.Equals(other.Id) && ProfileId.Equals(other.ProfileId) && Salary == other.Salary;
         }
 
         public override bool Equals(object obj)
@@ -32,7 +32,7 @@ namespace Bookstore.Entities.Book.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Id, DetailsId, Salary);
+            return HashCode.Combine(Id, ProfileId, Salary);
         }
     }
 }

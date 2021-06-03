@@ -8,8 +8,6 @@ namespace Bookstore.Entities.People.Models
 {
     public class PersonKnownAsName
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
         public Guid PersonId { get; set; }
         [ForeignKey("PersonId")]

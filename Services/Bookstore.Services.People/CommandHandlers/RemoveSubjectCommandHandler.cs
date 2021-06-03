@@ -13,15 +13,11 @@ namespace Bookstore.Services.People.CommandHandlers
 {
     public class RemoveSubjectCommandHandler : IConsumer<RemoveSubjectCommand>
     {
-        private readonly IPersonRepository _people;
-        private readonly ICompanyRepository _companies;
         private readonly ISubjectRepository _subjects;
 
-        public RemoveSubjectCommandHandler(ISubjectRepository subjects, IPersonRepository people, ICompanyRepository companies)
+        public RemoveSubjectCommandHandler(ISubjectRepository subjects)
         {
-            _people = people;
             _subjects = subjects;
-            _companies = companies;
         }
 
         public async Task Consume(ConsumeContext<RemoveSubjectCommand> context)
@@ -29,14 +25,7 @@ namespace Bookstore.Services.People.CommandHandlers
             var result = new RemoveSubjectCommandResult();
             try
             {
-                var subject = await _subjects.FindSubjectById(context.Message.SubjectId);
-                if (subject != null)
-                {
-                    if (subject is Company company)
-                        result.Success = await _companies.RemoveCompany(company.Id);
-                    else if (subject is Person person)
-                        result.Success = await _people.RemovePerson(person.Id);
-                }
+                result.Success = await _subjects.Remove(context.Message.SubjectId);
             }
             catch (Exception ex)
             {

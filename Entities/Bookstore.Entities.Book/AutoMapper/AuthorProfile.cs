@@ -10,7 +10,7 @@ namespace Bookstore.Entities.Book.AutoMapper
         public AuthorProfile()
         {
             CreateMap<Domains.Book.Models.Author, Models.Author>()
-                .ForMember(a => a.DetailsId, opt => opt.MapFrom((a => a.Details.Id)))
+                .ForMember(a => a.ProfileId, opt => opt.MapFrom((a => a.Details.Id)))
                 .ReverseMap()
                 .ForMember(a => a.Details, opt => opt.Ignore());
         }

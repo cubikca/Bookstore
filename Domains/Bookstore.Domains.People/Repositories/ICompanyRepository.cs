@@ -6,11 +6,7 @@ using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Domains.People.Repositories
 {
-    public interface ICompanyRepository
+    public interface ICompanyRepository : IRepository<Company>
     {
-        Task<Company> SaveCompany(Company company);
-        Task<IList<Company>> FindAllCompanies();
-        Task<Company> FindCompanyById(Guid companyId);
-        Task<bool> RemoveCompany(Guid companyId);
     }
 }

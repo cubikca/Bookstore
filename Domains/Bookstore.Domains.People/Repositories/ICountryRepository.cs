@@ -7,11 +7,7 @@ using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Domains.People.Repositories
 {
-    public interface ICountryRepository
+    public interface ICountryRepository : IRepository<Country>
     {
-        Task<Country> SaveCountry(Country country);
-        Task<Country> FindCountryByAbbreviation(string abbreviation);
-        Task<ICollection<Country>> FindAllCountries();
-        Task<bool> RemoveCountry(string abbreviation);
     }
 }

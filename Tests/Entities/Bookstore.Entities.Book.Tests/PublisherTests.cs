@@ -26,8 +26,8 @@ namespace Bookstore.Entities.Book.Tests
             services.AddDbContextFactory<BookContext>(cfg =>
             {
                 cfg.UseLazyLoadingProxies();
-                cfg.UseSqlServer(
-                    "Data Source=sqlserver;Initial Catalog=BookPublisherTests;User Id=brian;Password=development");
+                var connectionString = "server=mysql;user=brian;password=development;database=BooksEntitiesTests";
+                cfg.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             var mapperConfig = new MapperConfiguration(cfg =>
             {
@@ -41,8 +41,6 @@ namespace Bookstore.Entities.Book.Tests
             var dbFactory = sp.GetRequiredService<IDbContextFactory<BookContext>>();
             _db = dbFactory.CreateDbContext();
             _publishers = sp.GetRequiredService<IPublisherRepository>();
-            await _db.Database.EnsureDeletedAsync();
-            await _db.Database.MigrateAsync();
         }
 
         [Test]

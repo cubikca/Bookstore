@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,14 +28,14 @@ namespace Bookstore.Services.People.QueryHandlers
             {
                 if (context.Message.CompanyId.HasValue)
                 {
-                    var company = await _companies.FindCompanyById(context.Message.CompanyId.Value);
+                    var company = await _companies.Find(context.Message.CompanyId.Value);
                     if (company != null)
                         result.Results.Add(company);
                 }
                 else
                 {
-                    var companies = await _companies.FindAllCompanies();
-                    result.Results = companies;
+                    var companies = await _companies.FindAll();
+                    result.Results = companies.ToList();
                 }
             }
             catch (Exception ex)

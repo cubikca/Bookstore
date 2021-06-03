@@ -27,17 +27,18 @@ namespace Bookstore.Services.People.QueryHandlers
             var result = new FindCountriesQueryResult {Results = new List<Country>()};
             try
             {
-                if (context.Message.CountryAbbreviation != null)
+                if (context.Message.CountryId.HasValue)
                 {
-                    var country = await _countries.FindCountryByAbbreviation(context.Message.CountryAbbreviation);
+                    var country = await _countries.Find(context.Message.CountryId.Value);
                     if (country != null)
                         result.Results.Add(country);
                 }
                 else
                 {
-                    var countries = await _countries.FindAllCountries();
+                    var countries = await _countries.FindAll();
                     result.Results = countries.ToList();
                 }
+                result.Success = true;
             }
             catch (Exception ex)
             {

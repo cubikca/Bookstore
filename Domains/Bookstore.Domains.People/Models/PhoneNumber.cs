@@ -4,9 +4,13 @@ using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
-    public class PhoneNumber : ISerializable, IEquatable<PhoneNumber>
+    public class PhoneNumber : IDomainObject, IEquatable<PhoneNumber>
     {
         public Guid Id { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
         public string AreaCode { get; set; }
         public string Phone { get; set; }
         public string Extension { get; set; }

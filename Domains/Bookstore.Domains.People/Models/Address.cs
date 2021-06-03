@@ -4,9 +4,13 @@ using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
-    public class Address : ISerializable, IEquatable<Address>
+    public class Address : IDomainObject, IEquatable<Address>
     {
         public Guid Id { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
         public string Street1 { get; set; }
         public string Street2 { get; set; }
         public string City { get; set; }

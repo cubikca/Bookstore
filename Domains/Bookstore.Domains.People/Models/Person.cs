@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 namespace Bookstore.Domains.People.Models
 {
     // A valid name has at minimum a family name and one given name
-    public class Person : Subject, IEquatable<Person>
+    public class Person : Subject, IEquatable<Person>, ISerializable
     {
         /// <summary>
         /// The honorific title for this person, e.g. Dr. Mr. Ms. Mrs.

@@ -9,14 +9,14 @@ namespace Bookstore.Entities.Book.Models
     {
         [Key]
         public Guid Id { get; set; }
-        public Guid DetailsId { get; set; }
+        public Guid ProfileId { get; set; }
         public virtual IList<Book> Books { get; set; }
 
         public bool Equals(Publisher other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && DetailsId.Equals(other.DetailsId);
+            return Id.Equals(other.Id) && ProfileId.Equals(other.ProfileId);
         }
 
         public override bool Equals(object obj)
@@ -29,7 +29,7 @@ namespace Bookstore.Entities.Book.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Id, DetailsId);
+            return HashCode.Combine(Id, ProfileId);
         }
     }
 }

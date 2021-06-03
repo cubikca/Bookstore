@@ -6,12 +6,15 @@ using System.Text;
 
 namespace Bookstore.Entities.People.Models
 {
-    public class Location
+    public class Location : IEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
-        public Guid CompanyId { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
+        public bool Deleted { get; set; }
+        public Guid? CompanyId { get; set; }
         public bool Primary { get; set; }
         public Guid? MailingAddressId { get; set; }
         [ForeignKey("MailingAddressId")]

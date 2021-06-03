@@ -1,45 +1,59 @@
 using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using AutoMapper;
 using Bookstore.Domains.People.Repositories;
 using Bookstore.Entities.People.AutoMapper;
 using Bookstore.Entities.People.Repositories;
+using Bookstore.ObjectFillers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
 namespace Bookstore.Entities.People.Tests
 {
-    [TestFixture]
     public class CompanyTests
     {
-        private ICompanyRepository _companies;
-        private IMapper _mapper;
+        private IServiceProvider _services;
         private CompanyFiller _companyFiller;
 
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
+        private void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
-            var services = new ServiceCollection();
-            services.AddDbContextFactory<PeopleContext>(opt =>
+            var connectionString = config.GetConnectionString("PeopleContext");
+            services.AddLogging(cfg => cfg.AddConsole());
+            services.AddDbContextFactory<PeopleContext>(options =>
             {
-                opt.UseLazyLoadingProxies();
-                var connectionString = "server=mysql;user=brian;password=development;database=PeopleEntitiesTests";
-                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                options.UseLazyLoadingProxies();
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
-            services.AddLogging(opt => opt.AddConsole());
-            var sp = services.BuildServiceProvider();
-            var dbFactory = sp.GetService<IDbContextFactory<PeopleContext>>();
-            Assert.NotNull(dbFactory);
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<DefaultProfile>();
             });
-            _mapper = mapperConfig.CreateMapper();
-            var addresses = new AddressRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, sp.GetService<ILogger<AddressRepository>>());
-            var people = new PersonRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, addresses, sp.GetService<ILogger<PersonRepository>>());
-            _companies = new CompanyRepository(sp.GetService<IDbContextFactory<PeopleContext>>(), _mapper, addresses, people, sp.GetService<ILogger<CompanyRepository>>());
+            var mapper = mapperConfig.CreateMapper();
+            services.AddSingleton(mapper);
+            services.AddScoped<ICountryRepository, CountryRepository>();
+            services.AddScoped<IProvinceRepository, ProvinceRepository>();
+            services.AddScoped<IAddressRepository, AddressRepository>();
+            services.AddScoped<IPersonRepository, PersonRepository>();
+            services.AddScoped<ILocationRepository, LocationRepository>();
+            services.AddScoped<ICompanyRepository, CompanyRepository>();
+        }
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+                .AddJsonFile("appsettings.json")
+                .Build();
+            var services = new ServiceCollection();
+            ConfigureServices(services, config);
+            _services = services.BuildServiceProvider();
             _companyFiller = new CompanyFiller();
         }
 
@@ -47,42 +61,47 @@ namespace Bookstore.Entities.People.Tests
         public async Task TestSave()
         {
             var company = _companyFiller.FillCompany();
-            var created = await _companies.SaveCompany(company);
-            Assert.AreNotSame(company, created);
-            Assert.AreEqual(company, created);
-            created = _companyFiller.FillCompany();
-            created.Id = company.Id;
-            var updated = await _companies.SaveCompany(created);
+            var companies = _services.GetRequiredService<ICompanyRepository>();
+            var saved = await companies.Save(company);
+            Assert.AreNotSame(company, saved);
+            Assert.AreEqual(company.Id, saved.Id);
+            Assert.AreEqual(company, saved);
+            company = _companyFiller.FillCompany();
+            company.Id = saved.Id;
+            var updated = await companies.Save(company);
             Assert.AreNotSame(company, updated);
-            Assert.AreEqual(created, updated);
+            Assert.AreEqual(company.Id, updated.Id);
+            Assert.AreEqual(company, updated);
         }
 
         [Test]
         public async Task TestFind()
         {
             var company = _companyFiller.FillCompany();
-            var created = await _companies.SaveCompany(company);
-            var found = await _companies.FindCompanyById(created.Id);
-            var all = await _companies.FindAllCompanies();
-            Assert.AreEqual(created, found);
-            Assert.IsTrue(all.Contains(created));
+            var companies = _services.GetRequiredService<ICompanyRepository>();
+            company = await companies.Save(company);
+            var found = await companies.Find(company.Id);
+            var all = await companies.FindAll();
+            Assert.NotNull(found);
+            Assert.AreEqual(company.Id, found.Id);
+            Assert.AreEqual(company, found);
+            Assert.IsTrue(all.Any(c => c.Id == company.Id));
+            Assert.IsTrue(all.Contains(company));
         }
 
         [Test]
         public async Task TestRemove()
         {
             var company = _companyFiller.FillCompany();
-            var created = await _companies.SaveCompany(company);
-            var removed = await _companies.RemoveCompany(created.Id);
+            var companies = _services.GetRequiredService<ICompanyRepository>();
+            company = await companies.Save(company);
+            var removed = await companies.Remove(company.Id);
+            var found = await companies.Find(company.Id);
+            var all = await companies.FindAll();
             Assert.IsTrue(removed);
-            var found = await _companies.FindCompanyById(created.Id);
             Assert.IsNull(found);
-        }
-
-        [OneTimeTearDown]
-        public async Task OneTimeTearDown()
-        {
-            await Task.Yield();
+            Assert.IsTrue(all.All(c => c.Id != company.Id));
+            Assert.IsFalse(all.Contains(company));
         }
     }
 }

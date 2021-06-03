@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,11 @@ namespace Bookstore.Entities.People.Models
         /// <summary>
         /// The honorific title for this person, e.g. Dr. Mr. Ms. Mrs.
         /// </summary>
+        public Guid? StreetAddressId { get; set; }
+        public Guid? MailingAddressId { get; set; }
+        public Guid? EmailAddressId { get; set; }
+        public Guid? PhoneNumberId { get; set; }
+        public Guid? OnlinePresenceId { get; set; }
         public string Title { get; set; }
         /// <summary>
         /// All of the names for this person except the family name
@@ -53,8 +59,6 @@ namespace Bookstore.Entities.People.Models
             }
         }
 
-        // There are a lot of possibilities here but we can only have one
-        // This one seems reasonable and any other combination can be added where it is needed
         public override string Name
         {
             get
@@ -68,7 +72,15 @@ namespace Bookstore.Entities.People.Models
             }
         }
 
+        [ForeignKey("StreetAddressId")]
         public override Address StreetAddress { get; set; }
+        [ForeignKey("MailingAddressId")]
         public override Address MailingAddress { get; set; }
+        [ForeignKey("EmailAddressId")]
+        public virtual EmailAddress EmailAddress { get; set; }
+        [ForeignKey("PhoneNumberId")]
+        public virtual PhoneNumber PhoneNumber { get; set; }
+        [ForeignKey("OnlinePresenceId")] 
+        public virtual OnlinePresence OnlinePresence { get; set; }
     }
 }

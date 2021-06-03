@@ -29,7 +29,8 @@ namespace Bookstore.Entities.Book.Tests
             {
                 opt.UseLazyLoadingProxies();
                 opt.EnableSensitiveDataLogging();
-                opt.UseSqlServer("Data Source=sqlserver;Initial Catalog=BookBookTests;User Id=brian;Password=development");
+                var connectionString = "server=mysql;user=brian;password=development;database=BooksEntitiesTests";
+                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             services.AddScoped<IBookRepository, BookRepository>();
             _bookFiller = new BookFiller();
@@ -46,8 +47,6 @@ namespace Bookstore.Entities.Book.Tests
             var dbFactory = sp.GetService<IDbContextFactory<BookContext>>();
             Assert.NotNull(dbFactory);
             var db = dbFactory.CreateDbContext();
-            await db.Database.EnsureDeletedAsync();
-            await db.Database.MigrateAsync();
         }
 
         [Test]

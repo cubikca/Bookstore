@@ -6,19 +6,21 @@ using System.Text;
 
 namespace Bookstore.Entities.People.Models
 {
-    public class Province
+    public class Province : IEntity
     {
         public string Abbreviation { get; set; }
-        public string CountryAbbreviation { get; set; }
+        // when we create a province, we create without country and add afterward, so this needs to be nullable
+        public Guid? CountryId { get; set; }
         public string Name { get; set; }
 
-        public Province(string abbreviation, string countryAbbreviation)
-        {
-            Abbreviation = abbreviation;
-            CountryAbbreviation = countryAbbreviation;
-        }
-
-        [ForeignKey("CountryAbbreviation")]
+        [ForeignKey("CountryId")]
         public virtual Country Country { get; set; }
+
+        public Guid Id { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
+        public bool Deleted { get; set; }
     }
 }
