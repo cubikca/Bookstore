@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using Bookstore.Domains.Book.Models;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Entities.Book.Tests
+namespace Bookstore.ObjectFillers
 {
     public class AuthorFiller
     {
@@ -14,9 +13,8 @@ namespace Bookstore.Entities.Book.Tests
             _authorSetup = new Filler<Author>()
                 .Setup(true)
                 .OnProperty(a => a.Id).Use(Guid.NewGuid)
-                .OnProperty(a => a.Details.Id).Use(Guid.NewGuid)
+                .OnProperty(a => a.Profile).Use(() => new PersonFiller().FillPerson())
                 .OnProperty(a => a.Salary).Use(() => new Random().Next(100000, 150000))
-                .OnProperty(a => a.Books).IgnoreIt()
                 .Result;
         }
 

@@ -15,7 +15,7 @@ namespace Bookstore.Entities.People
         {
         }
 
-        public DbSet<Company> Companies { get; set; }
+        public DbSet<Organization> Organizations { get; set; }
         public DbSet<Person> People { get; set; }
         public DbSet<PersonGivenName> PersonGivenNames { get; set; }
         public DbSet<PersonKnownAsName> PersonKnownAsNames { get; set; }
@@ -37,7 +37,9 @@ namespace Bookstore.Entities.People
                 if (typeof(IEntity).IsAssignableFrom(entityType.ClrType) && entityType.ClrType.BaseType == null)
                     entityType.AddDeletedQueryFilter();
             }
-            modelBuilder.Entity<Subject>().UsePropertyAccessMode(PropertyAccessMode.PreferProperty);
+            modelBuilder.Entity<Subject>()
+                .Ignore(s => s.MailingAddress)
+                .Ignore(s => s.StreetAddress);
         }
     }
 
@@ -60,7 +62,7 @@ namespace Bookstore.Entities.People
              Expression<Func<TEntity, bool>> filter = x => !x.Deleted;
              return filter;
          }
-     }
-  }
+    }
+}
 
 

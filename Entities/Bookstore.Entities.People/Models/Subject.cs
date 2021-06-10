@@ -6,7 +6,6 @@ using System.Text;
 
 namespace Bookstore.Entities.People.Models
 {
-    [Table("Subjects")]
     public abstract class Subject : IEntity
     {
         [Key]
@@ -18,7 +17,7 @@ namespace Bookstore.Entities.People.Models
         public bool Deleted { get; set; }
         public abstract string Name { get; }
         public abstract string FullName { get; }
-        public virtual Address MailingAddress { get; set; }
-        public virtual Address StreetAddress { get; set; }
+        public abstract Address MailingAddress { get; set; }
+        public abstract Address StreetAddress { get; set; }
     }
 }

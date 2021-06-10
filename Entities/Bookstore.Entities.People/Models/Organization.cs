@@ -5,14 +5,14 @@ using System.Linq;
 
 namespace Bookstore.Entities.People.Models
 {
-    [Table("Companies")]
-    public class Company : Subject
+    [Table("Organizations")]
+    public class Organization : Subject
     {
-        public string CompanyName { get; set; }
+        public string OrganizationName { get; set; }
         public virtual ICollection<Location> Locations { get; set; }
 
-        public override string Name => CompanyName;
-        public override string FullName => CompanyName;
+        public override string Name => OrganizationName;
+        public override string FullName => OrganizationName;
         public override Address MailingAddress
         {
             get

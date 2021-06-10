@@ -14,27 +14,27 @@ namespace Bookstore.Services.People.QueryHandlers
 {
     public class FindCompaniesQueryHandler : IConsumer<FindCompaniesQuery>
     {
-        private readonly ICompanyRepository _companies;
+        private readonly IOrganizationRepository _organizations;
 
-        public FindCompaniesQueryHandler(ICompanyRepository companies)
+        public FindCompaniesQueryHandler(IOrganizationRepository organizations)
         {
-            _companies = companies;
+            _organizations = organizations;
         }
 
         public async Task Consume(ConsumeContext<FindCompaniesQuery> context)
         {
-            var result = new FindCompaniesQueryResult { Results = new List<Company>() } ;
+            var result = new FindCompaniesQueryResult { Results = new List<Organization>() } ;
             try
             {
                 if (context.Message.CompanyId.HasValue)
                 {
-                    var company = await _companies.Find(context.Message.CompanyId.Value);
+                    var company = await _organizations.Find(context.Message.CompanyId.Value);
                     if (company != null)
                         result.Results.Add(company);
                 }
                 else
                 {
-                    var companies = await _companies.FindAll();
+                    var companies = await _organizations.FindAll();
                     result.Results = companies.ToList();
                 }
             }

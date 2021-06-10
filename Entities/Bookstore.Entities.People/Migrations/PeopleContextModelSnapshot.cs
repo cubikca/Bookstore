@@ -138,9 +138,6 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime(6)");
 
@@ -151,6 +148,9 @@ namespace Bookstore.Entities.People.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<Guid?>("MailingAddressId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("OrganizationId")
                         .HasColumnType("char(36)");
 
                     b.Property<bool>("Primary")
@@ -167,9 +167,9 @@ namespace Bookstore.Entities.People.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
-
                     b.HasIndex("MailingAddressId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("StreetAddressId");
 
@@ -357,12 +357,6 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<bool>("Deleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<Guid?>("MailingAddressId1")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid?>("StreetAddressId1")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime>("Updated")
                         .HasColumnType("datetime(6)");
 
@@ -371,21 +365,17 @@ namespace Bookstore.Entities.People.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MailingAddressId1");
-
-                    b.HasIndex("StreetAddressId1");
-
                     b.ToTable("Subjects");
                 });
 
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Company", b =>
+            modelBuilder.Entity("Bookstore.Entities.People.Models.Organization", b =>
                 {
                     b.HasBaseType("Bookstore.Entities.People.Models.Subject");
 
-                    b.Property<string>("CompanyName")
+                    b.Property<string>("OrganizationName")
                         .HasColumnType("longtext");
 
-                    b.ToTable("Companies");
+                    b.ToTable("Organizations");
                 });
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Person", b =>
@@ -445,21 +435,21 @@ namespace Bookstore.Entities.People.Migrations
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Location", b =>
                 {
-                    b.HasOne("Bookstore.Entities.People.Models.Company", "Company")
-                        .WithMany("Locations")
-                        .HasForeignKey("CompanyId");
-
                     b.HasOne("Bookstore.Entities.People.Models.Address", "MailingAddress")
                         .WithMany()
                         .HasForeignKey("MailingAddressId");
+
+                    b.HasOne("Bookstore.Entities.People.Models.Organization", "Organization")
+                        .WithMany("Locations")
+                        .HasForeignKey("OrganizationId");
 
                     b.HasOne("Bookstore.Entities.People.Models.Address", "StreetAddress")
                         .WithMany()
                         .HasForeignKey("StreetAddressId");
 
-                    b.Navigation("Company");
-
                     b.Navigation("MailingAddress");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("StreetAddress");
                 });
@@ -514,26 +504,11 @@ namespace Bookstore.Entities.People.Migrations
                     b.Navigation("Country");
                 });
 
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Subject", b =>
-                {
-                    b.HasOne("Bookstore.Entities.People.Models.Address", "MailingAddress")
-                        .WithMany()
-                        .HasForeignKey("MailingAddressId1");
-
-                    b.HasOne("Bookstore.Entities.People.Models.Address", "StreetAddress")
-                        .WithMany()
-                        .HasForeignKey("StreetAddressId1");
-
-                    b.Navigation("MailingAddress");
-
-                    b.Navigation("StreetAddress");
-                });
-
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Company", b =>
+            modelBuilder.Entity("Bookstore.Entities.People.Models.Organization", b =>
                 {
                     b.HasOne("Bookstore.Entities.People.Models.Subject", null)
                         .WithOne()
-                        .HasForeignKey("Bookstore.Entities.People.Models.Company", "Id")
+                        .HasForeignKey("Bookstore.Entities.People.Models.Organization", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -570,7 +545,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Navigation("Contacts");
                 });
 
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Company", b =>
+            modelBuilder.Entity("Bookstore.Entities.People.Models.Organization", b =>
                 {
                     b.Navigation("Locations");
                 });

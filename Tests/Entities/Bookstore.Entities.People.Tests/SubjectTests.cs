@@ -20,7 +20,7 @@ namespace Bookstore.Entities.People.Tests
     public class SubjectTests
     {
         private IServiceProvider _services;
-        private CompanyFiller _companyFiller;
+        private OrganizationFiller _organizationFiller;
         private PersonFiller _personFiller;
         
         private void ConfigureServices(IServiceCollection services, IConfiguration config)
@@ -43,7 +43,7 @@ namespace Bookstore.Entities.People.Tests
             services.AddScoped<IAddressRepository, AddressRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
             services.AddScoped<ILocationRepository, LocationRepository>();
-            services.AddScoped<ICompanyRepository, CompanyRepository>();
+            services.AddScoped<IOrganizationRepository, OrganizationRepository>();
             services.AddScoped<ISubjectRepository, SubjectRepository>();
         }
         
@@ -57,7 +57,7 @@ namespace Bookstore.Entities.People.Tests
             var services = new ServiceCollection();
             ConfigureServices(services, config);
             _services = services.BuildServiceProvider();
-            _companyFiller = new CompanyFiller();
+            _organizationFiller = new OrganizationFiller();
             _personFiller = new PersonFiller();
         }
 
@@ -65,7 +65,7 @@ namespace Bookstore.Entities.People.Tests
         public async Task TestSave()
         {
             Subject subject1 = _personFiller.FillPerson();
-            Subject subject2 = _companyFiller.FillCompany();
+            Subject subject2 = _organizationFiller.FillCompany();
             var subjects = _services.GetRequiredService<ISubjectRepository>();
             var saved1 = await subjects.Save(subject1);
             var saved2 = await subjects.Save(subject2);
@@ -77,7 +77,7 @@ namespace Bookstore.Entities.People.Tests
             // you can probably do some things like changing a Person to a Company that aren't
             // currently supported. This test suite doesn't try to catch those scenarios.
             subject1 = _personFiller.FillPerson();
-            subject2 = _companyFiller.FillCompany();
+            subject2 = _organizationFiller.FillCompany();
             subject1.Id = saved1.Id;
             subject2.Id = saved2.Id;
             var updated1 = await subjects.Save(subject1);
@@ -93,7 +93,7 @@ namespace Bookstore.Entities.People.Tests
         public async Task TestFind()
         {
             Subject subject1 = _personFiller.FillPerson();
-            Subject subject2 = _companyFiller.FillCompany();
+            Subject subject2 = _organizationFiller.FillCompany();
             var subjects = _services.GetRequiredService<ISubjectRepository>();
             subject1 = await subjects.Save(subject1);
             subject2 = await subjects.Save(subject2);
@@ -113,7 +113,7 @@ namespace Bookstore.Entities.People.Tests
         [Test]
         public async Task TestRemove()
         {
-            Subject subject1 = _companyFiller.FillCompany();
+            Subject subject1 = _organizationFiller.FillCompany();
             Subject subject2 = _personFiller.FillPerson();
             var subjects = _services.GetRequiredService<ISubjectRepository>();
             subject1 = await subjects.Save(subject1);

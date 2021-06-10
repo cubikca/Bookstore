@@ -1,152 +1,74 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
+using System.Transactions;
 using AutoMapper;
+using Bookstore.Domains.Book;
+using Bookstore.Domains.Book.Models;
 using Bookstore.Domains.Book.Repositories;
-using Bookstore.Domains.People.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Bookstore.Entities.Book.Repositories
 {
-    public class BookRepository : IBookRepository
+    public class BookRepository : RepositoryBase<Domains.Book.Models.Book, Models.Book>, IBookRepository
     {
-        private BookContext _db;
-        private ILogger<BookRepository> _log;
-        private IMapper _mapper;
-
-        public BookRepository(IDbContextFactory<BookContext> dbFactory, ILogger<BookRepository> logger, IMapper mapper)
+        private readonly IPublisherRepository _publishers;
+        private readonly IAuthorRepository _authors;
+        
+        public BookRepository(IDbContextFactory<BookContext> dbFactory, IMapper mapper, IPublisherRepository publishers, IAuthorRepository authors, ILogger<BookRepository> logger) 
+            : base(dbFactory, mapper, logger)
         {
-            _db = dbFactory.CreateDbContext();
-            _log = logger;
-            _mapper = mapper;
+            _publishers = publishers;
+            _authors = authors;
         }
 
-        public async Task<Domains.Book.Models.Book> SaveBook(Domains.Book.Models.Book book)
+        public override async Task<Domains.Book.Models.Book> Save(Domains.Book.Models.Book model)
         {
             try
             {
-                if (book.Id == Guid.Empty)
-                    book.Id = Guid.NewGuid();
-                Models.Book entity = null;
-                Models.Publisher publisherEntity = null;
-                if (book.Publisher != null)
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
+                await using var db = DbFactory.CreateDbContext();
+                var book = await base.Save(model);
+                var entity = await db.Books.SingleAsync(b => b.Id == book.Id);
+                if (model.Publisher != null)
                 {
-                    if (book.Publisher.Id == Guid.Empty)
-                        book.Publisher.Id = Guid.NewGuid();
-                    publisherEntity = await _db.Publishers.SingleOrDefaultAsync(p => p.Id == book.Publisher.Id);
-                    if (publisherEntity == null)
-                    {
-                        publisherEntity = new Models.Publisher {Id = book.Publisher.Id};
-                        await _db.Publishers.AddAsync(publisherEntity);
-                    }
-                    _mapper.Map(book.Publisher, publisherEntity);
+                    var publisher = await _publishers.Save(model.Publisher);
+                    entity.Publisher = await db.Publishers.FindAsync(publisher.Id);
+                    entity.PublisherId = publisher.Id;
                 }
-                entity = await _db.Books.SingleOrDefaultAsync(b => b.Id == book.Id);
-                if (entity == null)
+                else
                 {
-                    entity = new Models.Book() {Id = book.Id};
-                    await _db.Books.AddAsync(entity);
-                }
-                _mapper.Map(book, entity);
-                if (book.Authors?.Any() == true)
-                {
-                    foreach (var author in book.Authors)
-                    {
-                        Models.Author authorEntity = null;
-                        if (author.Id == Guid.Empty)
-                            author.Id = Guid.NewGuid();
-                        authorEntity = await _db.Authors.SingleOrDefaultAsync(a => a.Id == author.Id);
-                        if (authorEntity == null)
-                        {
-                            authorEntity = new Models.Author {Id = author.Id};
-                            entity.Authors ??= new List<Models.Author>();
-                            await _db.Authors.AddAsync(authorEntity);
-                            entity.Authors.Add(authorEntity);
-                        }
-                        _mapper.Map(author, authorEntity);
-                    }
-                }                
-                if (book.Publisher == null && entity.Publisher != null)
-                {
-                    _db.Publishers.Remove(entity.Publisher);
                     entity.Publisher = null;
+                    entity.PublisherId = null;
                 }
-                if (publisherEntity != null && entity.Publisher == null)
-                    entity.Publisher = publisherEntity;
-                foreach (var authorEntity in entity.Authors.ToList()
-                    .Where(authorEntity => book.Authors?.All(b => b.Id != authorEntity.Id) != false))
+                await db.SaveChangesAsync();
+                model.Authors ??= new List<Author>();
+                foreach (var author in model.Authors)
                 {
-                    // no authors, or all authors don't match
-                    _db.Authors.Remove(authorEntity);
-                    entity.Authors.Remove(authorEntity);
+                    var authorModel = await _authors.Save(author);
+                    var authorEntity = await db.Authors.FindAsync(authorModel.Id);
+                    if (entity.Authors.All(a => a.Id != authorModel.Id))
+                        entity.Authors.Add(authorEntity);
                 }
-                await _db.SaveChangesAsync();
-                return await FindBookById(entity.Id);
+                foreach (var author in entity.Authors)
+                {
+                    if (model.Authors.All(a => a.Id != author.Id))
+                        entity.Authors.Remove(author);
+                }
+                await db.SaveChangesAsync();
+                var result = await Find(entity.Id);
+                scope.Complete();
+                return result;
             }
             catch (Exception ex)
             {
-                var message = ex.GetBaseException().Message;
-                _log.LogError("Error while saving book: {Message}", message);
-                throw new EntityException(message, ex);
+                var msg = "Unable to save Entity of type Book";
+                Logger.LogError(ex, msg);
+                throw new BookException(msg, ex);
             }
-        }
-
-        public async Task<IList<Domains.Book.Models.Book>> FindAllBooks()
-        {
-            try
-            {
-                var books = await _db.Books.ToListAsync();
-                return _mapper.Map<List<Domains.Book.Models.Book>>(books);
-            }
-            catch (Exception ex)
-            {
-                var message = ex.GetBaseException().Message;
-                _log.LogError("Error while retrieving books: {Message}", message);
-                throw new EntityException(message, ex);
-            }
-        }
-
-        public async Task<Domains.Book.Models.Book> FindBookById(Guid bookId)
-        {
-            try
-            {
-                var book = await _db.Books.SingleOrDefaultAsync(b => b.Id == bookId);
-                return book != null ? _mapper.Map<Domains.Book.Models.Book>(book) : null;
-            }
-            catch (Exception ex)
-            {
-                var message = ex.GetBaseException().Message;
-                _log.LogError("Error while retrieving books: {Message}", message);
-                throw new EntityException(message, ex);
-            }
-        }
-
-        public async Task<bool> RemoveBook(Guid bookId)
-        {
-            try
-            {
-                var entity = await _db.Books.SingleOrDefaultAsync(b => b.Id == bookId);
-                if (entity == null)
-                    return false;
-                _db.Books.Remove(entity);
-                await _db.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                var message = ex.GetBaseException().Message;
-                _log.LogError("Error while retrieving books: {Message}", message);
-                throw new EntityException(message, ex);
-            }
-        }
-
-        public void Dispose()
-        {
-            _db?.Dispose();
         }
     }
 }

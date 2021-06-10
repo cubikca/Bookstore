@@ -2,15 +2,19 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Bookstore.Domains.Book.Models;
-using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Entities.Book.Models
 {
-    public class Book : IEquatable<Book>
+    public class Book : IEntity, IEquatable<Book>
     {
         [Key]
         public Guid Id { get; set; }
+
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
+        public bool Deleted { get; set; }
         public string ISBN { get; set; }
         public string Title { get; set; }
         public string Subtitle { get; set; }
@@ -40,18 +44,7 @@ namespace Bookstore.Entities.Book.Models
 
         public override int GetHashCode()
         {
-            var hashCode = new HashCode();
-            hashCode.Add(Id);
-            hashCode.Add(ISBN);
-            hashCode.Add(Title);
-            hashCode.Add(Subtitle);
-            hashCode.Add(Authors);
-            hashCode.Add(Edition);
-            hashCode.Add(PublishDate);
-            hashCode.Add(Publisher);
-            hashCode.Add(Cost);
-            hashCode.Add(Price);
-            return hashCode.ToHashCode();
+            return HashCode.Combine(Id, ISBN, Title, Subtitle, Edition, PublishDate, Cost, Price);
         }
     }
 }

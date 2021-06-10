@@ -6,14 +6,14 @@ using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
-    public class Company : Subject, IEquatable<Company>
+    public class Organization : Subject, IEquatable<Organization>
     {
-        public string CompanyName { get; set; }
-        public override string Name => CompanyName;
-        public override string FullName => CompanyName;
+        public string OrganizationName { get; set; }
+        public override string Name => OrganizationName;
+        public override string FullName => OrganizationName;
         public IList<Location> Locations { get; set; }
 
-        public Company()
+        public Organization()
         {
             Locations = new List<Location>();
         }
@@ -45,25 +45,25 @@ namespace Bookstore.Domains.People.Models
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("CompanyName", CompanyName);
+            info.AddValue("CompanyName", OrganizationName);
             info.AddValue("Locations", Locations);
         }
 
-        public bool Equals(Company other)
+        public bool Equals(Organization other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return CompanyName == other.CompanyName && Locations.All(other.Locations.Contains) && other.Locations.All(Locations.Contains);
+            return OrganizationName == other.OrganizationName && Locations.All(other.Locations.Contains) && other.Locations.All(Locations.Contains);
         }
 
         public override bool Equals(object obj)
         {
-            return ReferenceEquals(this, obj) || obj is Company other && Equals(other);
+            return ReferenceEquals(this, obj) || obj is Organization other && Equals(other);
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(CompanyName, Locations);
+            return HashCode.Combine(OrganizationName, Locations);
         }
     }
 }

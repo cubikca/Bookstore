@@ -16,10 +16,10 @@ using NUnit.Framework;
 
 namespace Bookstore.Entities.People.Tests
 {
-    public class CompanyTests
+    public class OrganizationTests
     {
         private IServiceProvider _services;
-        private CompanyFiller _companyFiller;
+        private OrganizationFiller _organizationFiller;
 
         private void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
@@ -41,7 +41,7 @@ namespace Bookstore.Entities.People.Tests
             services.AddScoped<IAddressRepository, AddressRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
             services.AddScoped<ILocationRepository, LocationRepository>();
-            services.AddScoped<ICompanyRepository, CompanyRepository>();
+            services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         }
 
         [OneTimeSetUp]
@@ -54,54 +54,54 @@ namespace Bookstore.Entities.People.Tests
             var services = new ServiceCollection();
             ConfigureServices(services, config);
             _services = services.BuildServiceProvider();
-            _companyFiller = new CompanyFiller();
+            _organizationFiller = new OrganizationFiller();
         }
 
         [Test]
         public async Task TestSave()
         {
-            var company = _companyFiller.FillCompany();
-            var companies = _services.GetRequiredService<ICompanyRepository>();
-            var saved = await companies.Save(company);
-            Assert.AreNotSame(company, saved);
-            Assert.AreEqual(company.Id, saved.Id);
-            Assert.AreEqual(company, saved);
-            company = _companyFiller.FillCompany();
-            company.Id = saved.Id;
-            var updated = await companies.Save(company);
-            Assert.AreNotSame(company, updated);
-            Assert.AreEqual(company.Id, updated.Id);
-            Assert.AreEqual(company, updated);
+            var organization = _organizationFiller.FillCompany();
+            var organizations = _services.GetRequiredService<IOrganizationRepository>();
+            var saved = await organizations.Save(organization);
+            Assert.AreNotSame(organization, saved);
+            Assert.AreEqual(organization.Id, saved.Id);
+            Assert.AreEqual(organization, saved);
+            organization = _organizationFiller.FillCompany();
+            organization.Id = saved.Id;
+            var updated = await organizations.Save(organization);
+            Assert.AreNotSame(organization, updated);
+            Assert.AreEqual(organization.Id, updated.Id);
+            Assert.AreEqual(organization, updated);
         }
 
         [Test]
         public async Task TestFind()
         {
-            var company = _companyFiller.FillCompany();
-            var companies = _services.GetRequiredService<ICompanyRepository>();
-            company = await companies.Save(company);
-            var found = await companies.Find(company.Id);
-            var all = await companies.FindAll();
+            var organization = _organizationFiller.FillCompany();
+            var organizations = _services.GetRequiredService<IOrganizationRepository>();
+            organization = await organizations.Save(organization);
+            var found = await organizations.Find(organization.Id);
+            var all = await organizations.FindAll();
             Assert.NotNull(found);
-            Assert.AreEqual(company.Id, found.Id);
-            Assert.AreEqual(company, found);
-            Assert.IsTrue(all.Any(c => c.Id == company.Id));
-            Assert.IsTrue(all.Contains(company));
+            Assert.AreEqual(organization.Id, found.Id);
+            Assert.AreEqual(organization, found);
+            Assert.IsTrue(all.Any(c => c.Id == organization.Id));
+            Assert.IsTrue(all.Contains(organization));
         }
 
         [Test]
         public async Task TestRemove()
         {
-            var company = _companyFiller.FillCompany();
-            var companies = _services.GetRequiredService<ICompanyRepository>();
-            company = await companies.Save(company);
-            var removed = await companies.Remove(company.Id);
-            var found = await companies.Find(company.Id);
-            var all = await companies.FindAll();
+            var organization = _organizationFiller.FillCompany();
+            var organizations = _services.GetRequiredService<IOrganizationRepository>();
+            organization = await organizations.Save(organization);
+            var removed = await organizations.Remove(organization.Id);
+            var found = await organizations.Find(organization.Id);
+            var all = await organizations.FindAll();
             Assert.IsTrue(removed);
             Assert.IsNull(found);
-            Assert.IsTrue(all.All(c => c.Id != company.Id));
-            Assert.IsFalse(all.Contains(company));
+            Assert.IsTrue(all.All(c => c.Id != organization.Id));
+            Assert.IsFalse(all.Contains(organization));
         }
     }
 }

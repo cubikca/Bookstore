@@ -74,15 +74,15 @@ namespace Bookstore.Entities.People.AutoMapper
                 .ForMember(l => l.MailingAddressId, opt => opt.Ignore())
                 .ForMember(l => l.StreetAddressId, opt => opt.Ignore())
                 .ForMember(l => l.Contacts, opt => opt.Ignore())
-                .ForMember(l => l.Company, opt => opt.Ignore())
-                .ForMember(l => l.CompanyId, opt => opt.Ignore())
+                .ForMember(l => l.Organization, opt => opt.Ignore())
+                .ForMember(l => l.OrganizationId, opt => opt.Ignore())
                 .ReverseMap()
                 .ForMember(l => l.Contacts, opt => opt.MapFrom(src => src.Contacts.Select(lc => lc.Contact)));
-            CreateMap<Bookstore.Domains.People.Models.Company, Models.Company>()
+            CreateMap<Bookstore.Domains.People.Models.Organization, Models.Organization>()
                 .IncludeBase<Bookstore.Domains.People.Models.Subject, Models.Subject>()
                 .ForMember(c => c.Locations, opt => opt.Ignore());
             // odd, ReverseMap() doesn't work here, so we have to make two declarations
-            CreateMap<Models.Company, Bookstore.Domains.People.Models.Company>()
+            CreateMap<Models.Organization, Bookstore.Domains.People.Models.Organization>()
                 .IncludeBase<Models.Subject, Bookstore.Domains.People.Models.Subject>();
         }
     }

@@ -2,7 +2,7 @@ using System;
 using Bookstore.Domains.Book.Models;
 using Tynamix.ObjectFiller;
 
-namespace Bookstore.Entities.Book.Tests
+namespace Bookstore.ObjectFillers
 {
     public class BookFiller
     {

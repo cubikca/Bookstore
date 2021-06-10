@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using AutoMapper;
@@ -68,6 +69,47 @@ namespace Bookstore.Entities.People.Repositories
                 Logger.LogError(ex, msg);
                 throw new PeopleException(msg, ex);
             }    
+        }
+
+        public override async Task<bool> Remove(Guid id)
+        {
+            using var scope =
+                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+            await using var db = DbFactory.CreateDbContext();
+            try
+            {
+                // Address is referred to in a few places, so we need to set them null manually
+                foreach (var person in db.People.Where(p => p.StreetAddressId == id))
+                {
+                    person.StreetAddress = null;
+                    person.StreetAddressId = null;
+                }
+                foreach (var location in db.Locations.Where(l => l.StreetAddressId == id))
+                {
+                    location.StreetAddress = null;
+                    location.StreetAddressId = null;
+                }
+                foreach (var person in db.People.Where(p => p.MailingAddressId == id))
+                {
+                    person.MailingAddress = null;
+                    person.MailingAddressId = null;
+                }
+                foreach (var location in db.Locations.Where(l => l.MailingAddressId == id))
+                {
+                    location.MailingAddress = null;
+                    location.MailingAddressId = null;
+                }
+                var result = await base.Remove(id);
+                await db.SaveChangesAsync();
+                scope.Complete();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var msg = "Failed to remove Entity of type Address";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
         }
     }
 }

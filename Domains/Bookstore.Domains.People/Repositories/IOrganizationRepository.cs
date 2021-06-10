@@ -6,7 +6,7 @@ using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Domains.People.Repositories
 {
-    public interface ICompanyRepository : IRepository<Company>
+    public interface IOrganizationRepository : IRepository<Organization>
     {
     }
 }

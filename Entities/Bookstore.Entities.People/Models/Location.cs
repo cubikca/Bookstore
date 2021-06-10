@@ -14,7 +14,7 @@ namespace Bookstore.Entities.People.Models
         public string UpdatedBy { get; set; }
         public DateTime Updated { get; set; }
         public bool Deleted { get; set; }
-        public Guid? CompanyId { get; set; }
+        public Guid? OrganizationId { get; set; }
         public bool Primary { get; set; }
         public Guid? MailingAddressId { get; set; }
         [ForeignKey("MailingAddressId")]
@@ -29,8 +29,7 @@ namespace Bookstore.Entities.People.Models
             get => _contacts ??= new List<LocationContact>();
             set => _contacts = value;
         }
-        
-        [ForeignKey("CompanyId")]
-        public virtual Company Company { get; set; }
+        [ForeignKey("OrganizationId")]
+        public virtual Organization Organization { get; set; }
     }
 }

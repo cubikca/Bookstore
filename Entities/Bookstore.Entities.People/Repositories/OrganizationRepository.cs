@@ -12,18 +12,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Bookstore.Entities.People.Repositories
 {
-    public class CompanyRepository : RepositoryBase<Company, Models.Company>, ICompanyRepository
+    public class OrganizationRepository : RepositoryBase<Organization, Models.Organization>, IOrganizationRepository
     {
         private readonly ILocationRepository _locations;
-        private readonly IAddressRepository _addresses;
         
-        public CompanyRepository(IDbContextFactory<PeopleContext> dbFactory, IMapper mapper, ILocationRepository locations, IAddressRepository addresses, ILogger<RepositoryBase<Company, Models.Company>> logger) : base(dbFactory, mapper, logger)
+        public OrganizationRepository(IDbContextFactory<PeopleContext> dbFactory, IMapper mapper, ILocationRepository locations, ILogger<RepositoryBase<Organization, Models.Organization>> logger) : base(dbFactory, mapper, logger)
         {
             _locations = locations;
-            _addresses = addresses;
         }
         
-        public override async Task<Company> Save(Company model)
+        public override async Task<Organization> Save(Organization model)
         {
             try
             {
@@ -31,22 +29,22 @@ namespace Bookstore.Entities.People.Repositories
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var company = await base.Save(model);
-                var entity = await db.Companies.SingleAsync(c => c.Id == company.Id);
+                var entity = await db.Organizations.SingleAsync(c => c.Id == company.Id);
                 model.Locations ??= new List<Location>();
                 foreach (var location in model.Locations)
                 {
                     var saved = await _locations.Save(location);
                     var locationEntity = await db.Locations.SingleAsync(l => l.Id == saved.Id);
-                    locationEntity.Company = entity;
-                    locationEntity.CompanyId = entity.Id;
+                    locationEntity.Organization = entity;
+                    locationEntity.OrganizationId = entity.Id;
                     await db.SaveChangesAsync();
                 }
                 foreach (var location in entity.Locations.ToList())
                 {
                     if (model.Locations.All(l => l.Id != location.Id))
                     {
-                        location.Company = null;
-                        location.CompanyId = null;
+                        location.Organization = null;
+                        location.OrganizationId = null;
                         await db.SaveChangesAsync();
                         await _locations.Remove(location.Id);
                     }
@@ -70,12 +68,12 @@ namespace Bookstore.Entities.People.Repositories
                 using var scope = new TransactionScope(TransactionScopeOption.Required,
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Companies.SingleAsync(c => c.Id == id && !c.Deleted);
+                var entity = await db.Organizations.SingleAsync(c => c.Id == id && !c.Deleted);
                 if (entity == null) return false;
                 foreach (var location in entity.Locations)
                 {
-                    location.Company = null;
-                    location.CompanyId = null;
+                    location.Organization = null;
+                    location.OrganizationId = null;
                     await _locations.Remove(location.Id);
                 }
                 entity.Deleted = true;
@@ -85,7 +83,7 @@ namespace Bookstore.Entities.People.Repositories
             }
             catch (Exception ex)
             {
-                var msg = "Unable to remove Entity of type Company";
+                var msg = "Unable to remove Entity of type Organization";
                 Logger.LogError(ex, msg);
                 throw new PeopleException(msg, ex);
             }    

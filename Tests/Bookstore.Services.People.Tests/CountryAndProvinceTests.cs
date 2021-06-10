@@ -1,0 +1,193 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using Bookstore.Domains.People.CommandResults;
+using Bookstore.Domains.People.Commands;
+using Bookstore.Domains.People.Models;
+using Bookstore.Domains.People.Queries;
+using Bookstore.Domains.People.QueryResults;
+using Bookstore.Domains.People.Repositories;
+using Bookstore.ObjectFillers;
+using GreenPipes;
+using MassTransit;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using NUnit.Framework;
+using Tynamix.ObjectFiller;
+
+namespace Bookstore.Services.People.Tests
+{
+    public class CountryAndProvinceTests
+    {
+        private IServiceProvider _services;
+        private IBusControl _busControl;
+        private IRequestClient<RemoveCountryCommand> _removeCountryCommand;
+        private IRequestClient<RemoveProvinceCommand> _removeProvinceCommand;
+        private IRequestClient<SaveCountryCommand> _saveCountryCommand;
+        private IRequestClient<SaveProvinceCommand> _saveProvinceCommand;
+        private IRequestClient<FindCountriesQuery> _findCountriesQuery;
+        private IRequestClient<FindProvincesQuery> _findProvincesQuery;
+        private CountryFiller _countryFiller;
+        private ProvinceFiller _provinceFiller;
+        
+        private void ConfigureServices(IServiceCollection services, IConfiguration config)
+        {
+            services.AddLogging(log => log.AddConsole());
+            services.AddMassTransit(mt =>
+            {
+                mt.AddRequestClient<RemoveCountryCommand>();
+                mt.AddRequestClient<RemoveProvinceCommand>();
+                mt.AddRequestClient<SaveCountryCommand>();
+                mt.AddRequestClient<SaveProvinceCommand>();
+                mt.AddRequestClient<FindCountriesQuery>();
+                mt.AddRequestClient<FindProvincesQuery>();
+                mt.UsingRabbitMq((_, rmq) =>
+                {
+                    var connectionString = config.GetConnectionString("PeopleService");
+                    rmq.Host(new Uri(connectionString));
+                    rmq.UseBsonSerializer();
+                });
+            });
+        }
+        
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+                .AddJsonFile("appsettings.json")
+                .Build();
+            var services = new ServiceCollection();
+            ConfigureServices(services, config);
+            _services = services.BuildServiceProvider();
+            _findCountriesQuery = _services.GetRequiredService<IRequestClient<FindCountriesQuery>>();
+            _findProvincesQuery = _services.GetRequiredService<IRequestClient<FindProvincesQuery>>();
+            _removeCountryCommand = _services.GetRequiredService<IRequestClient<RemoveCountryCommand>>();
+            _removeProvinceCommand = _services.GetRequiredService<IRequestClient<RemoveProvinceCommand>>();
+            _saveCountryCommand = _services.GetRequiredService<IRequestClient<SaveCountryCommand>>();
+            _saveProvinceCommand = _services.GetRequiredService<IRequestClient<SaveProvinceCommand>>();
+            _busControl = _services.GetRequiredService<IBusControl>();
+            _busControl.Start();
+            _provinceFiller = new ProvinceFiller();
+            _countryFiller = new CountryFiller();
+        }
+
+        [Test]
+        public async Task TestSave()
+        {
+            var province = _provinceFiller.FillProvince();
+            var country = _countryFiller.FillCountry();
+            province.Country = country;
+            await _saveProvinceCommand.GetResponse<SaveProvinceCommandResult>(
+                new SaveProvinceCommand {Province = province});
+            // now both the province and country should be saved
+            var createdProvinceResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
+                new FindProvincesQuery {ProvinceId = province.Id});
+            var createdCountryResponse = await _findCountriesQuery.GetResponse<FindCountriesQueryResult>(
+                new FindCountriesQuery {CountryId = country.Id});
+            var createdProvince = createdProvinceResponse.Message.Results.SingleOrDefault();
+            var createdCountry = createdCountryResponse.Message.Results.SingleOrDefault();
+            Assert.IsNotNull(createdProvince);
+            Assert.IsNotNull(createdCountry);
+            Assert.AreNotSame(province, createdProvince);
+            Assert.AreNotSame(country, createdCountry);
+            Assert.AreEqual(province, createdProvince);
+            Assert.AreEqual(country, createdCountry);
+            province = _provinceFiller.FillProvince();
+            province.Id = createdProvince.Id;
+            country = _countryFiller.FillCountry();
+            country.Id = createdCountry.Id;
+            province.Country = country;
+            await _saveCountryCommand.GetResponse<SaveCountryCommandResult>(
+                new SaveCountryCommand {Country = country});
+            var updatedCountryResponse = await _findCountriesQuery.GetResponse<FindCountriesQueryResult>(
+                new FindCountriesQuery {CountryId = country.Id});
+            await _saveProvinceCommand.GetResponse<SaveProvinceCommandResult>(
+                new SaveProvinceCommand {Province = province});
+            var updatedProvinceResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
+                new FindProvincesQuery {ProvinceId = province.Id});
+            var updatedProvince = updatedProvinceResponse.Message.Results.SingleOrDefault();
+            var updatedCountry = updatedCountryResponse.Message.Results.SingleOrDefault();
+            Assert.NotNull(updatedProvince);
+            Assert.NotNull(updatedCountry);
+            Assert.AreNotSame(province, updatedProvince);
+            Assert.AreNotSame(country, updatedCountry);
+            Assert.AreEqual(province, updatedProvince);
+            Assert.AreEqual(country, updatedCountry);
+        }
+
+        [Test]
+        public async Task TestFind()
+        {
+            var province1 = _provinceFiller.FillProvince();
+            var province2 = _provinceFiller.FillProvince();
+            var province3 = _provinceFiller.FillProvince();
+            province2.Country = province1.Country;
+            await _saveProvinceCommand.GetResponse<SaveProvinceCommandResult>(
+                new SaveProvinceCommand {Province = province1});
+            await _saveProvinceCommand.GetResponse<SaveProvinceCommandResult>(
+                new SaveProvinceCommand {Province = province2});
+            await _saveProvinceCommand.GetResponse<SaveProvinceCommandResult>(
+                new SaveProvinceCommand {Province = province3});
+            var findSingleProvinceResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
+                new FindProvincesQuery {ProvinceId = province1.Id});
+            var findCountryProvincesResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
+                new FindProvincesQuery {CountryId = province1.Country.Id});
+            var findAllProvincesResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
+                new FindProvincesQuery());
+            var findSingleCountryResponse = await _findCountriesQuery.GetResponse<FindCountriesQueryResult>(
+                new FindCountriesQuery {CountryId = province1.Country.Id});
+            var findAllCountriesResponse = await _findCountriesQuery.GetResponse<FindCountriesQueryResult>(
+                new FindCountriesQuery());
+            var foundSingleProvince = findSingleProvinceResponse.Message.Results.SingleOrDefault();
+            var foundSingleCountry = findSingleCountryResponse.Message.Results.SingleOrDefault();
+            Assert.NotNull(foundSingleProvince);
+            Assert.NotNull(foundSingleCountry);
+            Assert.AreNotSame(province1, foundSingleProvince);
+            Assert.AreEqual(province1, foundSingleProvince);
+            Assert.IsTrue(new HashSet<Province> { province1, province2 }.SetEquals(findCountryProvincesResponse.Message.Results));
+            Assert.IsTrue(new HashSet<Province> { province1, province2, province3 }.All(findAllProvincesResponse.Message.Results.Contains));
+            // province1.Country == province2.Country
+            Assert.IsTrue(new HashSet<Country> {province1.Country, province3.Country}.All(findAllCountriesResponse.Message.Results.Contains));
+        }
+
+        [Test]
+        public async Task TestRemove()
+        {
+            var province1 = _provinceFiller.FillProvince();
+            var province2 = _provinceFiller.FillProvince();
+            await _saveProvinceCommand.GetResponse<SaveProvinceCommandResult>(
+                new SaveProvinceCommand {Province = province1});
+            await _saveProvinceCommand.GetResponse<SaveProvinceCommandResult>(
+                new SaveProvinceCommand {Province = province2});
+            var removedProvinceResponse = await _removeProvinceCommand.GetResponse<RemoveProvinceCommandResult>(
+                new RemoveProvinceCommand {ProvinceId = province1.Id});
+            var foundProvinceResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
+                new FindProvincesQuery {ProvinceId = province1.Id});
+            Assert.IsTrue(removedProvinceResponse.Message.Success);
+            Assert.IsFalse(foundProvinceResponse.Message.Results.Any());
+            var removedCountryResponse = await _removeCountryCommand.GetResponse<RemoveCountryCommandResult>(
+                new RemoveCountryCommand {CountryId = province2.Country.Id});
+            var foundCountryResponse = await _findCountriesQuery.GetResponse<FindCountriesQueryResult>(
+                new FindCountriesQuery {CountryId = province2.Country.Id});
+            foundProvinceResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
+                new FindProvincesQuery {ProvinceId = province2.Id});
+            Assert.IsTrue(removedCountryResponse.Message.Success);
+            Assert.IsFalse(foundCountryResponse.Message.Results.Any());
+            Assert.IsFalse(foundProvinceResponse.Message.Results.Any());
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            _busControl.Stop();
+        }
+    }
+}

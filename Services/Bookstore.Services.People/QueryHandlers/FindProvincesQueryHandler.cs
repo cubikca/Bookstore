@@ -29,7 +29,11 @@ namespace Bookstore.Services.People.QueryHandlers
             try
             {
                 if (context.Message.ProvinceId != null && context.Message.CountryId != null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
-                if (context.Message.ProvinceId == null && context.Message.CountryId == null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
+                if (!(context.Message.CountryId.HasValue || context.Message.ProvinceId.HasValue))
+                {
+                    var provinces = await _provinces.FindAll();
+                    queryResults.AddRange(provinces ?? Enumerable.Empty<Province>());
+                }
                 if (context.Message.ProvinceId.HasValue)
                 {
                     var province = await _provinces.Find(context.Message.ProvinceId.Value);

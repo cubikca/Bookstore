@@ -4,20 +4,20 @@ using Tynamix.ObjectFiller;
 
 namespace Bookstore.ObjectFillers
 {
-    public class CompanyFiller 
+    public class OrganizationFiller 
     {
-        private Filler<Company> _filler;
+        private Filler<Organization> _filler;
 
-        public CompanyFiller()
+        public OrganizationFiller()
         {
-            _filler = new Filler<Company>();
+            _filler = new Filler<Organization>();
             _filler.Setup(true)
                 .OnProperty(c => c.Id).Use(Guid.NewGuid)
-                .OnProperty(c => c.CompanyName).Use<MnemonicString>()
+                .OnProperty(c => c.OrganizationName).Use<MnemonicString>()
                 .OnProperty(c => c.Locations).Use(new Collectionizer<Location, RandomLocation>(1, 3));
         }
         
-        public Company FillCompany()
+        public Organization FillCompany()
         {
             return _filler.Create();
         }
