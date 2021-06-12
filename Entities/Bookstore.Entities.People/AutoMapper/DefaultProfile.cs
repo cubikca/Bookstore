@@ -3,6 +3,8 @@ using System.Linq;
 using AutoMapper;
 using Bookstore.Domains.People.Models;
 using Bookstore.Entities.People.Models;
+using Address = Bookstore.Domains.People.Models.Address;
+using Location = Bookstore.Domains.People.Models.Location;
 
 namespace Bookstore.Entities.People.AutoMapper
 {
@@ -76,8 +78,9 @@ namespace Bookstore.Entities.People.AutoMapper
                 .ForMember(l => l.StreetAddressId, opt => opt.Ignore())
                 .ForMember(l => l.Contacts, opt => opt.Ignore())
                 .ForMember(l => l.Organization, opt => opt.Ignore())
-                .ForMember(l => l.OrganizationId, opt => opt.Ignore())
-                .ReverseMap()
+                .ForMember(l => l.OrganizationId, opt => opt.Ignore());
+            CreateMap<Models.Location, Location>()
+                .IncludeBase<IEntity, IDomainObject>()
                 .ForMember(l => l.Contacts, opt => opt.MapFrom(src => src.Contacts.Select(lc => lc.Contact)));
             CreateMap<Bookstore.Domains.People.Models.Organization, Models.Organization>()
                 .IncludeBase<Bookstore.Domains.People.Models.Subject, Models.Subject>()
