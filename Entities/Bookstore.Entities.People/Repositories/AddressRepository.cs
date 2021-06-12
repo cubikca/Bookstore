@@ -98,7 +98,7 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entities = await AddressQuery(db).ToListAsync();
+                var entities = await AddressQuery(db).Where(a => !a.Deleted).ToListAsync();
                 return Mapper.Map<List<Address>>(entities);
             }
             catch (Exception ex)
