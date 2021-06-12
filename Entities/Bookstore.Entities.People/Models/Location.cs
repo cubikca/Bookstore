@@ -17,19 +17,11 @@ namespace Bookstore.Entities.People.Models
         public Guid? OrganizationId { get; set; }
         public bool Primary { get; set; }
         public Guid? MailingAddressId { get; set; }
-        [ForeignKey("MailingAddressId")]
         public virtual Address MailingAddress { get; set; }
         public Guid? StreetAddressId { get; set; }
-        [ForeignKey("StreetAddressId")]
         public virtual Address StreetAddress { get; set; }
 
-        private IList<LocationContact> _contacts;
-        public virtual IList<LocationContact> Contacts
-        {
-            get => _contacts ??= new List<LocationContact>();
-            set => _contacts = value;
-        }
-        [ForeignKey("OrganizationId")]
+        public virtual ICollection<LocationContact> Contacts { get; set; }
         public virtual Organization Organization { get; set; }
     }
 }

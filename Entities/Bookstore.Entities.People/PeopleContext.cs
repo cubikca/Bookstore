@@ -31,15 +31,18 @@ namespace Bookstore.Entities.People
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Ignore<Subject>();
             modelBuilder.Entity<LocationContact>().HasKey(lc => new {lc.LocationId, lc.ContactId});
+            /***
+             * Soft deletion is ideal for both auditing and data integrity purposes. The code below automatically
+             * filters out deleted objects from the set for any IEntity object. Note that deleted objects still
+             * can be found using Single() so ensure your Single() query includes !Deleted
+             */
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 if (typeof(IEntity).IsAssignableFrom(entityType.ClrType) && entityType.ClrType.BaseType == null)
                     entityType.AddDeletedQueryFilter();
             }
-            modelBuilder.Entity<Subject>()
-                .Ignore(s => s.MailingAddress)
-                .Ignore(s => s.StreetAddress);
         }
     }
 

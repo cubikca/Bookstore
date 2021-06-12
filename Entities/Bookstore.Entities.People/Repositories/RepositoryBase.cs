@@ -14,6 +14,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Bookstore.Entities.People.Repositories
 {
+    /***
+     * This is a default implementation of a repository sufficient for simple objects with simple properties.
+     * It works really well for such objects, and shouldn't be modified for specialized cases farther down the
+     * hierarchy.
+     *
+     * In particular, this repository doesn't know anything about the object it is processing, and so can't automatically
+     * include navigation properties. There are two solutions: the lazy solution and the better solution. The lazy solution
+     * is to add lazy loading proxies to all of your database contexts (a la EF6). The better solution is to specify
+     * which fields to load prior to automapping - by overriding the appropriate methods in the concrete repository.
+     */
     public abstract class RepositoryBase<TModel, TEntity> : IRepository<TModel> 
         where TModel : class, IDomainObject, new() 
         where TEntity : class, IEntity, new()
@@ -37,7 +47,7 @@ namespace Bookstore.Entities.People.Repositories
                 using var scope =
                     new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Set<TEntity>().SingleOrDefaultAsync(e => e.Id == model.Id);
+                var entity = await db.Set<TEntity>().FindAsync(model.Id);
                 if (entity == null)
                 {
                     entity = Activator.CreateInstance<TEntity>();
@@ -50,7 +60,7 @@ namespace Bookstore.Entities.People.Repositories
                 if (entity.CreatedBy == null) entity.CreatedBy = Thread.CurrentPrincipal?.Identity?.Name ?? "Anonymous";
                 entity.UpdatedBy = Thread.CurrentPrincipal?.Identity?.Name ?? "Anonymous";
                 await db.SaveChangesAsync();
-                var result = await Find(entity.Id);
+                var result = Mapper.Map<TModel>(await db.Set<TEntity>().FindAsync(entity.Id));
                 scope.Complete();
                 return result;
             }
@@ -67,8 +77,12 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Set<TEntity>().SingleOrDefaultAsync(e => e.Id == id && !e.Deleted);
-                return entity != null ? Mapper.Map<TModel>(entity) : null;
+                var entity = await db.Set<TEntity>().FindAsync(id);
+                if (entity == null) return null;
+                var result = entity.Deleted
+                    ? null
+                    : Mapper.Map<TModel>(entity);
+                return result;
             }
             catch (Exception ex)
             {
@@ -83,7 +97,8 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                return Mapper.Map<List<TModel>>(await db.Set<TEntity>().Where(e => !e.Deleted).ToListAsync());
+                var results =  Mapper.Map<List<TModel>>(await db.Set<TEntity>().Where(x => !x.Deleted).ToListAsync());
+                return results;
             }
             catch (Exception ex)
             {
@@ -100,7 +115,7 @@ namespace Bookstore.Entities.People.Repositories
                 using var scope = new TransactionScope(TransactionScopeOption.Required,
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Set<TEntity>().SingleOrDefaultAsync(e => e.Id == id);
+                var entity = await db.Set<TEntity>().FindAsync(id);
                 if (entity == null) return false;
                 entity.Deleted = true;
                 entity.Updated = DateTime.Now;

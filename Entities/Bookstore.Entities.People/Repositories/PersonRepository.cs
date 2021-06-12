@@ -9,6 +9,7 @@ using Bookstore.Domains.People;
 using Bookstore.Domains.People.Repositories;
 using Bookstore.Entities.People.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 using EmailAddress = Bookstore.Domains.People.Models.EmailAddress;
 using OnlinePresence = Bookstore.Domains.People.Models.OnlinePresence;
@@ -171,7 +172,7 @@ namespace Bookstore.Entities.People.Repositories
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var person = await base.Save(model);
-                var entity = await db.People.SingleOrDefaultAsync(p => p.Id == person.Id);
+                var entity = await PersonQuery(db).SingleOrDefaultAsync(p => p.Id == person.Id && !p.Deleted);
                 await SaveGivenNames(db, entity, model.GivenNames);
                 await SaveKnownAsNames(db, entity, model.KnownAs);
                 if (model.StreetAddress != null)
@@ -179,7 +180,7 @@ namespace Bookstore.Entities.People.Repositories
                     if (entity.StreetAddress != null)
                         await _addresses.Remove(entity.StreetAddress.Id);
                     var address = await _addresses.Save(model.StreetAddress);
-                    entity.StreetAddress = await db.Addresses.SingleOrDefaultAsync(a => a.Id == address.Id);
+                    entity.StreetAddress = await db.Addresses.FindAsync(address.Id);
                     entity.StreetAddressId = address.Id;
                     await db.SaveChangesAsync();
                 }
@@ -188,7 +189,7 @@ namespace Bookstore.Entities.People.Repositories
                     if (entity.MailingAddress != null)
                         await _addresses.Remove(entity.MailingAddress.Id);
                     var address = await _addresses.Save(model.MailingAddress);
-                    entity.MailingAddress = await db.Addresses.SingleOrDefaultAsync(a => a.Id == address.Id);
+                    entity.MailingAddress = await db.Addresses.FindAsync(address.Id);
                     entity.MailingAddressId = address.Id;
                     await db.SaveChangesAsync();
                 }
@@ -204,13 +205,121 @@ namespace Bookstore.Entities.People.Repositories
                     await SaveOnlinePresence(entity, model.OnlinePresence);
                 else
                     await RemoveOnlinePresence(entity);
-                var result = await Find(person.Id);
+                var result = Mapper.Map<Person>(await PersonQuery(db)
+                    .SingleOrDefaultAsync(p => p.Id == person.Id && !p.Deleted));
                 scope.Complete();
                 return result;
             }
             catch (Exception ex)
             {
                 var msg = "Unable to save Entity of type Person";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
+        }
+
+        private static IQueryable<Models.Person> PersonQuery(PeopleContext db)
+        {
+            return db.People
+                .Include(p => p.GivenNames)
+                .Include(p => p.KnownAs)
+                .Include(p => p.MailingAddress).ThenInclude(a => a.Country)
+                .Include(p => p.MailingAddress).ThenInclude(a => a.Province).ThenInclude(p => p.Country)
+                .Include(p => p.StreetAddress).ThenInclude(a => a.Country)
+                .Include(p => p.StreetAddress).ThenInclude(a => a.Province).ThenInclude(p => p.Country)
+                .Include(p => p.EmailAddress)
+                .Include(p => p.PhoneNumber)
+                .Include(p => p.OnlinePresence)
+                .AsQueryable();
+        }
+
+        public override async Task<Person> Find(Guid id)
+        {
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await PersonQuery(db)
+                    .SingleOrDefaultAsync(p => p.Id == id && !p.Deleted);
+                var person = Mapper.Map<Person>(entity);
+                return person;
+            }
+            catch (Exception ex)
+            {
+                var msg = "Failed to retrieve Entity data of type Person";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
+        }
+
+        public override async Task<ICollection<Person>> FindAll()
+        {
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entities = await PersonQuery(db)
+                    .Where(p => !p.Deleted)
+                    .ToListAsync();
+                var people = Mapper.Map<List<Person>>(entities);
+                return people;
+            }
+            catch (Exception ex)
+            {
+                var msg = "Failed to retrieve Entity data of type Person";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
+        }
+
+        public override async Task<bool> Remove(Guid id)
+        {
+            try
+            {
+                using var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled);
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await PersonQuery(db)
+                    .SingleOrDefaultAsync(p => p.Id == id && !p.Deleted);
+                if (entity == null) return false;
+                if (entity.GivenNames != null)
+                {
+                    db.PersonGivenNames.RemoveRange(entity.GivenNames);
+                    await db.SaveChangesAsync();
+                }
+                if (entity.KnownAs != null)
+                {
+                    db.PersonKnownAsNames.RemoveRange(entity.KnownAs);
+                    await db.SaveChangesAsync();
+                }
+                if (entity.StreetAddressId.HasValue)
+                {
+                    var addressEntity = await db.Addresses.FindAsync(entity.StreetAddressId);
+                    if (addressEntity != null) addressEntity.Deleted = true;
+                    entity.StreetAddress = null;
+                    entity.StreetAddressId = null;
+                    await db.SaveChangesAsync();
+                }
+                if (entity.MailingAddressId.HasValue)
+                {
+                    var addressEntity = await db.Addresses.FindAsync(entity.MailingAddressId);
+                    if (addressEntity != null) addressEntity.Deleted = true;
+                    entity.MailingAddress = null;
+                    entity.MailingAddressId = null;
+                    await db.SaveChangesAsync();
+                }
+                if (entity.EmailAddress != null)
+                    await RemoveEmail(entity);
+                if (entity.PhoneNumber != null)
+                    await RemovePhoneNumber(entity);
+                if (entity.OnlinePresence != null)
+                    await RemoveOnlinePresence(entity);
+                entity.Deleted = true;
+                await db.SaveChangesAsync();
+                scope.Complete();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                var msg = "Failed to remove Entity of type Person";
                 Logger.LogError(ex, msg);
                 throw new PeopleException(msg, ex);
             }

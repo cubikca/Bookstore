@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -13,6 +14,12 @@ namespace Bookstore.Entities.People.Repositories
 {
     public class AddressRepository : RepositoryBase<Address, Models.Address>, IAddressRepository
     {
+        static IQueryable<Models.Address> AddressQuery(PeopleContext db) =>
+            db.Addresses
+                .Include(a => a.Country)
+                .Include(a => a.Province).ThenInclude(p => p.Country)
+                .AsQueryable();
+        
         private readonly ICountryRepository _countries;
         private readonly IProvinceRepository _provinces;
         
@@ -30,22 +37,21 @@ namespace Bookstore.Entities.People.Repositories
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var address = await base.Save(model);
-                var entity = await db.Addresses.SingleOrDefaultAsync(a => a.Id == address.Id);
-                if (entity == null)
-                    return null;
+                var entity = await AddressQuery(db).SingleOrDefaultAsync(a => a.Id == address.Id && !a.Deleted);
+                if (entity == null || entity.Deleted) return null;
                 if (model.Country != null)
                 {
                     var country = await _countries.Save(model.Country);
-                    entity.Country = await db.Countries.SingleOrDefaultAsync(c => c.Id == country.Id);
-                    entity.CountryId = country?.Id;
+                    entity.Country = await db.Countries.FindAsync(country.Id);
+                    entity.CountryId = country.Id;
                 }
                 else
                     entity.Deleted = true;
                 if (model.Province != null)
                 {
                     var province = await _provinces.Save(model.Province);
-                    entity.Province = await db.Provinces.SingleOrDefaultAsync(p => p.Id == province.Id);
-                    entity.ProvinceId = province?.Id;
+                    entity.Province = await db.Provinces.FindAsync(province.Id);
+                    entity.ProvinceId = province.Id;
                 }
                 else
                 {
@@ -55,11 +61,11 @@ namespace Bookstore.Entities.People.Repositories
                 if (model.Country != null)
                 {
                     var country = await _countries.Save(model.Country);
-                    entity.Country = await db.Countries.SingleOrDefaultAsync(c => c.Id == country.Id);
+                    entity.Country = await db.Countries.FindAsync(country.Id);
                     entity.CountryId = country.Id;
                 }
                 await db.SaveChangesAsync();
-                var result = await Find(entity.Id);
+                var result = Mapper.Map<Address>(await AddressQuery(db).SingleAsync(a => a.Id == model.Id));
                 scope.Complete();
                 return result;
             }
@@ -71,14 +77,46 @@ namespace Bookstore.Entities.People.Repositories
             }    
         }
 
+        public override async Task<Address> Find(Guid id)
+        {
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await AddressQuery(db).SingleOrDefaultAsync(a => a.Id == id && !a.Deleted);
+                return Mapper.Map<Address>(entity);
+            }
+            catch (Exception ex)
+            {
+                var msg = "Unable to retrieve Entity data of type Address";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
+        }
+
+        public override async Task<ICollection<Address>> FindAll()
+        {
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entities = await AddressQuery(db).ToListAsync();
+                return Mapper.Map<List<Address>>(entities);
+            }
+            catch (Exception ex)
+            {
+                var msg = "Failed to retrieve Entity data of type Address";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
+        }
+
         public override async Task<bool> Remove(Guid id)
         {
-            using var scope =
-                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-            await using var db = DbFactory.CreateDbContext();
             try
             {
                 // Address is referred to in a few places, so we need to set them null manually
+                using var scope =
+                    new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+                await using var db = DbFactory.CreateDbContext();
                 foreach (var person in db.People.Where(p => p.StreetAddressId == id))
                 {
                     person.StreetAddress = null;
@@ -99,8 +137,8 @@ namespace Bookstore.Entities.People.Repositories
                     location.MailingAddress = null;
                     location.MailingAddressId = null;
                 }
-                var result = await base.Remove(id);
                 await db.SaveChangesAsync();
+                var result = await base.Remove(id);
                 scope.Complete();
                 return result;
             }

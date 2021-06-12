@@ -48,8 +48,9 @@ namespace Bookstore.Entities.People.Models
                 var builder = new StringBuilder();
                 if (!string.IsNullOrEmpty(Title))
                     builder.Append($"{Title} ");
-                foreach (var name in GivenNames)
-                    builder.Append($"{name.GivenName} ");
+                if (GivenNames != null)
+                    foreach (var name in GivenNames)
+                        builder.Append($"{name.GivenName} ");
                 if (!string.IsNullOrEmpty(Initial))
                     builder.Append($"{Initial} ");
                 builder.Append(FamilyName);
@@ -64,7 +65,7 @@ namespace Bookstore.Entities.People.Models
             get
             {
                 var builder = new StringBuilder();
-                if (GivenNames.Any())
+                if (GivenNames?.Any() == true)
                     builder.Append($"{GivenNames[0]} ");
                 if (!string.IsNullOrEmpty(FamilyName))
                     builder.Append($"{FamilyName}");
@@ -72,15 +73,22 @@ namespace Bookstore.Entities.People.Models
             }
         }
 
-        [ForeignKey("StreetAddressId")]
-        public override Address StreetAddress { get; set; }
-        [ForeignKey("MailingAddressId")]
-        public override Address MailingAddress { get; set; }
-        [ForeignKey("EmailAddressId")]
+        private Address _streetAddress;
+
+        public override Address StreetAddress
+        {
+            get => _streetAddress;
+            set => _streetAddress = value;
+        }
+        private Address _mailingAddress;
+
+        public override Address MailingAddress
+        {
+            get => _mailingAddress; 
+            set => _mailingAddress = value;
+        }
         public virtual EmailAddress EmailAddress { get; set; }
-        [ForeignKey("PhoneNumberId")]
         public virtual PhoneNumber PhoneNumber { get; set; }
-        [ForeignKey("OnlinePresenceId")] 
         public virtual OnlinePresence OnlinePresence { get; set; }
     }
 }

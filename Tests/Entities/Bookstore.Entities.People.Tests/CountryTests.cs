@@ -23,10 +23,9 @@ namespace Bookstore.Entities.People.Tests
         private void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
             services.AddLogging(cfg => cfg.AddConsole());
-            var connectionString = config.GetConnectionString("PeopleContext");
             services.AddDbContextFactory<PeopleContext>(options =>
             {
-                options.UseLazyLoadingProxies();
+                var connectionString = config.GetConnectionString("PeopleContext");
                 options.EnableDetailedErrors();
                 options.EnableSensitiveDataLogging();
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));

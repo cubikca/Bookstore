@@ -25,11 +25,11 @@ namespace Bookstore.Entities.People.Repositories
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var entity = await db.Countries.FindAsync(countryId);
-                if (entity == null) return false;
+                if (entity == null || entity.Deleted) return false;
                 foreach (var province in db.Provinces.Where(p => p.CountryId == countryId))
                     province.Deleted = true;
-                entity.Deleted = true;
                 await db.SaveChangesAsync();
+                await base.Remove(countryId);
                 scope.Complete();
                 return true;
             }

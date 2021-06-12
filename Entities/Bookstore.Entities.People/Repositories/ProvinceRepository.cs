@@ -23,18 +23,66 @@ namespace Bookstore.Entities.People.Repositories
 
         public override async Task<Province> Save(Province model)
         {
-            using var scope =
-                new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-            await using var db = DbFactory.CreateDbContext();
-            var province = await base.Save(model);
-            var country = await _countries.Save(model.Country);
-            var entity = await db.Provinces.SingleAsync(p => p.Id == province.Id);
-            entity.Country = await db.Countries.SingleAsync(c => c.Id == country.Id);
-            entity.CountryId = country.Id;
-            await db.SaveChangesAsync();
-            var result = await Find(model.Id);
-            scope.Complete();
-            return result;
+            try
+            {
+                using var scope =
+                    new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+                await using var db = DbFactory.CreateDbContext();
+                var province = await base.Save(model);
+                var country = await _countries.Save(model.Country);
+                var entity = await db.Provinces.FindAsync(province.Id);
+                entity.Country = await db.Countries.FindAsync(country.Id);
+                entity.CountryId = country.Id;
+                await db.SaveChangesAsync();
+                var result = Mapper.Map<Province>(await db.Provinces
+                    .Include(p => p.Country)
+                    .SingleAsync(p => p.Id == model.Id));
+                scope.Complete();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var msg = "Unable to save Entity of type Province";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
+        }
+
+        public override async Task<Province> Find(Guid id)
+        {
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entity = await db.Provinces
+                    .Include(p => p.Country)
+                    .SingleOrDefaultAsync(p => p.Id == id && !p.Deleted);
+                return Mapper.Map<Province>(entity);
+            }
+            catch (Exception ex)
+            {
+                var msg = "Unable to retrieve Entity data of type Province";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
+        }
+
+        public override async Task<ICollection<Province>> FindAll()
+        {
+            try
+            {
+                await using var db = DbFactory.CreateDbContext();
+                var entities = await db.Provinces
+                    .Include(p => p.Country)
+                    .Where(p => !p.Deleted)
+                    .ToListAsync();
+                return Mapper.Map<List<Province>>(entities);
+            }
+            catch (Exception ex)
+            {
+                var msg = "Failed to retrieve Entity data of type Province";
+                Logger.LogError(ex, msg);
+                throw new PeopleException(msg, ex);
+            }
         }
 
         public async Task<ICollection<Province>> FindByCountry(Guid countryId)
@@ -42,7 +90,10 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var provinces = await db.Provinces.Where(p => p.CountryId == countryId).ToListAsync();
+                var provinces = await db.Provinces
+                    .Include(p => p.Country)
+                    .Where(p => p.CountryId == countryId)
+                    .ToListAsync();
                 var result = Mapper.Map<List<Province>>(provinces);
                 return result;
             }

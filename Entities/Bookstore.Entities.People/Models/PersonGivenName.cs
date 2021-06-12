@@ -10,7 +10,6 @@ namespace Bookstore.Entities.People.Models
     {
         public Guid Id { get; set; }
         public Guid PersonId { get; set; }
-        [ForeignKey("PersonId")]
         public virtual Person Person { get; set; }
         public string GivenName { get; set; }
     }

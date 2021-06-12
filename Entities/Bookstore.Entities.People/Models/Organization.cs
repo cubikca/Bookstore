@@ -13,6 +13,8 @@ namespace Bookstore.Entities.People.Models
 
         public override string Name => OrganizationName;
         public override string FullName => OrganizationName;
+        
+        [NotMapped]
         public override Address MailingAddress
         {
             get
@@ -27,6 +29,7 @@ namespace Bookstore.Entities.People.Models
             }
         }
 
+        [NotMapped]
         public override Address StreetAddress
         {
             get

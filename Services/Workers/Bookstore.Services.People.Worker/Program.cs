@@ -28,7 +28,6 @@ namespace Bookstore.Services.Workers.People
             services.AddLogging(cfg => cfg.AddConsole());
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
-                opt.UseLazyLoadingProxies();
                 var connectionString = config.GetConnectionString("PeopleContext");
                 opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });

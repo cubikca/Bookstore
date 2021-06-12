@@ -36,7 +36,7 @@ namespace Bookstore.Entities.Book.Repositories
                 using var scope =
                     new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Set<TEntity>().SingleOrDefaultAsync(e => e.Id == model.Id);
+                var entity = await db.Set<TEntity>().FindAsync(model.Id);
                 if (entity == null)
                 {
                     entity = Activator.CreateInstance<TEntity>();
@@ -66,7 +66,7 @@ namespace Bookstore.Entities.Book.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Set<TEntity>().SingleOrDefaultAsync(e => e.Id == id && !e.Deleted);
+                var entity = await db.Set<TEntity>().FindAsync(id);
                 return entity != null ? Mapper.Map<TModel>(entity) : null;
             }
             catch (Exception ex)
@@ -99,7 +99,7 @@ namespace Bookstore.Entities.Book.Repositories
                 using var scope = new TransactionScope(TransactionScopeOption.Required,
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Set<TEntity>().SingleOrDefaultAsync(e => e.Id == id);
+                var entity = await db.Set<TEntity>().FindAsync(id);
                 if (entity == null) return false;
                 entity.Deleted = true;
                 entity.Updated = DateTime.Now;

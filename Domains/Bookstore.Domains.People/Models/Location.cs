@@ -34,7 +34,7 @@ namespace Bookstore.Domains.People.Models
             var contactsEqual = Contacts != null && other.Contacts != null
                 ? Contacts.All(other.Contacts.Contains) && other.Contacts.All(Contacts.Contains)
                 : (Contacts?.Count ?? 0) == (other.Contacts?.Count ?? 0);
-            return Id == other.Id && Primary == other.Primary && Equals(MailingAddress, other.MailingAddress) && Equals(StreetAddress, other.StreetAddress) && contactsEqual;
+            return Primary == other.Primary && Equals(MailingAddress, other.MailingAddress) && Equals(StreetAddress, other.StreetAddress) && contactsEqual;
         }
 
         public override bool Equals(object obj)

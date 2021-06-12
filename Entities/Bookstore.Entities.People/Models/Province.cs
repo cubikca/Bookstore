@@ -13,7 +13,6 @@ namespace Bookstore.Entities.People.Models
         public Guid? CountryId { get; set; }
         public string Name { get; set; }
 
-        [ForeignKey("CountryId")]
         public virtual Country Country { get; set; }
 
         public Guid Id { get; set; }
