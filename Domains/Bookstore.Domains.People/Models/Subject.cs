@@ -11,9 +11,13 @@ namespace Bookstore.Domains.People.Models
      * Many systems allow both people and companies to fill various roles (client, customer, supplier, etc.)
      * We don't want to treat people and companies differently in cases where they fill the same role
      */
-    public abstract class Subject
+    public abstract class Subject : IDomainObject
     {
         public Guid Id { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
         public virtual string Name { get; set; }
         public virtual string FullName { get; set; }
         public virtual Address StreetAddress { get; set; }

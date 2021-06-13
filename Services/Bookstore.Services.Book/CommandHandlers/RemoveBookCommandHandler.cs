@@ -22,7 +22,7 @@ namespace Bookstore.Services.Book.CommandHandlers
             var result = new RemoveBookCommandResult();
             try
             {
-                result.Success = await _books.RemoveBook(context.Message.BookId);
+                result.Success = await _books.Remove(context.Message.BookId);
             }
             catch (Exception ex)
             {

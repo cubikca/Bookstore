@@ -6,11 +6,7 @@ using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Domains.People.Repositories
 {
-    public interface IPersonRepository
+    public interface IPersonRepository : IRepository<Person>
     {
-        Task<Person> SavePerson(Person person);
-        Task<ICollection<Person>> FindAllPeople();
-        Task<Person> FindPersonById(Guid personId);
-        Task<bool> RemovePerson(Guid personId);
     }
 }

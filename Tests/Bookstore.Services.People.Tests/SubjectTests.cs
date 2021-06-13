@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Bookstore.Domains.People.CommandResults;
@@ -8,166 +10,150 @@ using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
+using Bookstore.ObjectFillers;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Bookstore.Services.People.Tests
 {
-    [TestFixture]
     public class SubjectTests
     {
-        private IBusControl _busControl;
-        private IRequestClient<SaveSubjectCommand> _saveSubjectClient;
-        private IRequestClient<FindSubjectsQuery> _findSubjectsClient;
-        private IRequestClient<RemoveSubjectCommand> _removeSubjectClient;
-
+        private IServiceProvider _services;
+        private IRequestClient<SaveSubjectCommand> _saveSubjectCommand;
+        private IRequestClient<FindSubjectsQuery> _findSubjectsQuery;
+        private IRequestClient<RemoveSubjectCommand> _removeSubjectCommand;
         private PersonFiller _personFiller;
-        private CompanyFiller _companyFiller;
-
-        /* start the people service worker manually first! */
-        [OneTimeSetUp]
-        public async Task OneTimeSetUp()
+        private OrganizationFiller _organizationFiller;
+        
+        private void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
-            _personFiller = new PersonFiller();
-            _companyFiller = new CompanyFiller();
-            _busControl = Bus.Factory.CreateUsingRabbitMq(rmq =>
+            services.AddLogging(cfg => cfg.AddConsole());
+            services.AddMassTransit(mt =>
             {
-                rmq.Host(new Uri("amqp://localhost:5672/people"), host =>
+                mt.AddRequestClient<SaveSubjectCommand>();
+                mt.AddRequestClient<FindSubjectsQuery>();
+                mt.AddRequestClient<RemoveSubjectCommand>();
+                mt.UsingRabbitMq((_, rmq) =>
                 {
-                    host.Username("brian");
-                    host.Password("development");
+                    var connectionString = config.GetConnectionString("PeopleService");
+                    rmq.Host(new Uri(connectionString));
+                    rmq.UseBsonSerializer();
                 });
-                rmq.UseBsonSerializer();
             });
-            await _busControl.StartAsync();
-            _saveSubjectClient = _busControl.CreateRequestClient<SaveSubjectCommand>();
-            _findSubjectsClient = _busControl.CreateRequestClient<FindSubjectsQuery>();
-            _removeSubjectClient = _busControl.CreateRequestClient<RemoveSubjectCommand>();
+       }
+        
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+                .AddJsonFile("appsettings.json")
+                .Build();
+            var services = new ServiceCollection();
+            ConfigureServices(services, config);
+            _services = services.BuildServiceProvider();
+            _saveSubjectCommand = _services.GetRequiredService<IRequestClient<SaveSubjectCommand>>();
+            _findSubjectsQuery = _services.GetRequiredService<IRequestClient<FindSubjectsQuery>>();
+            _removeSubjectCommand = _services.GetRequiredService<IRequestClient<RemoveSubjectCommand>>();
+            _personFiller = new PersonFiller();
+            _organizationFiller = new OrganizationFiller();
+            var busControl = _services.GetRequiredService<IBusControl>();
+            busControl.Start();
+        }
+
+        [Test]
+        public async Task TestSave()
+        {
+            var person = _personFiller.FillPerson();
+            var organization = _organizationFiller.FillOrganization();
+            var savePersonResponse = await _saveSubjectCommand.GetResponse<SaveSubjectCommandResult>(
+                new SaveSubjectCommand {Subject = person});
+            var saveOrganizationResponse = await _saveSubjectCommand.GetResponse<SaveSubjectCommandResult>(
+                new SaveSubjectCommand {Subject = organization});
+            Assert.NotNull(savePersonResponse.Message.Subject);
+            Assert.NotNull(saveOrganizationResponse.Message.Subject);
+            Assert.AreEqual(person.Id, savePersonResponse.Message.Subject.Id);
+            Assert.AreEqual(organization.Id, saveOrganizationResponse.Message.Subject.Id);
+            Assert.AreEqual(person, savePersonResponse.Message.Subject);
+            Assert.AreEqual(organization, saveOrganizationResponse.Message.Subject);
+            person = _personFiller.FillPerson();
+            organization = _organizationFiller.FillOrganization();
+            person.Id = savePersonResponse.Message.Subject.Id;
+            organization.Id = saveOrganizationResponse.Message.Subject.Id;
+            var updatePersonResponse = await _saveSubjectCommand.GetResponse<SaveSubjectCommandResult>(
+                new SaveSubjectCommand {Subject = person});
+            var updateOrganizationResponse = await _saveSubjectCommand.GetResponse<SaveSubjectCommandResult>(
+                new SaveSubjectCommand {Subject = organization});
+            Assert.NotNull(updatePersonResponse.Message.Subject);
+            Assert.NotNull(updateOrganizationResponse.Message.Subject);
+            Assert.AreEqual(person.Id, updatePersonResponse.Message.Subject.Id);
+            Assert.AreEqual(organization.Id, updateOrganizationResponse.Message.Subject.Id);
+            Assert.AreEqual(person, updatePersonResponse.Message.Subject);
+            Assert.AreEqual(organization, updateOrganizationResponse.Message.Subject);
+        }
+
+        [Test]
+        public async Task TestFind()
+        {
+            var person = _personFiller.FillPerson();
+            var organization = _organizationFiller.FillOrganization();
+            await _saveSubjectCommand.GetResponse<SaveSubjectCommandResult>(
+                new SaveSubjectCommand {Subject = person});
+            await _saveSubjectCommand.GetResponse<SaveSubjectCommandResult>(
+                new SaveSubjectCommand {Subject = organization});
+            var foundPersonResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
+                new FindSubjectsQuery {SubjectId = person.Id});
+            var foundOrganizationResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
+                new FindSubjectsQuery {SubjectId = organization.Id});
+            var foundPerson = foundPersonResponse.Message.Results.SingleOrDefault();
+            var foundOrganization = foundOrganizationResponse.Message.Results.SingleOrDefault();
+            var allSubjectsResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
+                new FindSubjectsQuery());
+            Assert.NotNull(foundPerson);
+            Assert.NotNull(foundOrganization);
+            Assert.AreEqual(person, foundPerson);
+            Assert.AreEqual(organization, foundOrganization);
+            Assert.IsTrue(allSubjectsResponse.Message.Results.Any(r => r.Id == person.Id));
+            Assert.IsTrue(allSubjectsResponse.Message.Results.Contains(person));
+            Assert.IsTrue(allSubjectsResponse.Message.Results.Any(r => r.Id == organization.Id));
+            Assert.IsTrue(allSubjectsResponse.Message.Results.Contains(organization));
+        }
+
+        [Test]
+        public async Task TestRemove()
+        {
+            var person = _personFiller.FillPerson();
+            var organization = _organizationFiller.FillOrganization();
+            await _saveSubjectCommand.GetResponse<SaveSubjectCommandResult>(
+                new SaveSubjectCommand {Subject = person});
+            await _saveSubjectCommand.GetResponse<SaveSubjectCommandResult>(
+                new SaveSubjectCommand {Subject = organization});
+            var removePersonResponse = await _removeSubjectCommand.GetResponse<RemoveSubjectCommandResult>(
+                new RemoveSubjectCommand {SubjectId = person.Id});
+            var removeOrganizationResponse = await _removeSubjectCommand.GetResponse<RemoveSubjectCommandResult>(
+                new RemoveSubjectCommand {SubjectId = organization.Id});
+            Assert.IsTrue(removePersonResponse.Message.Success);
+            Assert.IsTrue(removeOrganizationResponse.Message.Success);
+            var foundPersonResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
+                new FindSubjectsQuery {SubjectId = person.Id});
+            var foundOrganizationResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
+                new FindSubjectsQuery {SubjectId = organization.Id});
+            var foundPerson = foundPersonResponse.Message.Results.SingleOrDefault();
+            var foundOrganization = foundOrganizationResponse.Message.Results.SingleOrDefault();
+            Assert.IsNull(foundPerson);
+            Assert.IsNull(foundOrganization);
         }
 
         [OneTimeTearDown]
-        public async Task OneTimeTearDown()
+        public void OneTimeTearDown()
         {
-            await _busControl.StopAsync();
-        }
-
-        [Test]
-        public async Task TestSaveSubject()
-        {
-            var person = _personFiller.FillPerson();
-            var saveCommand = new SaveSubjectCommand {Subject = person};
-            var saveResponse =
-                await _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(saveCommand);
-            var personResult = saveResponse.Message;
-            if (personResult.Error != null) Assert.Fail(personResult.Error);
-            Assert.NotNull(personResult.Subject);
-            Assert.AreNotSame(personResult.Subject, person);
-            Assert.AreEqual(person.Id, personResult.Subject.Id);
-            var company = _companyFiller.FillCompany();
-            saveCommand = new SaveSubjectCommand {Subject = company};
-            saveResponse =
-                await _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(saveCommand);
-            if (saveResponse.Message.Error != null) Assert.Fail(saveResponse.Message.Error);
-            var subject = saveResponse.Message.Subject;
-            Assert.NotNull(subject);
-            Assert.AreNotSame(company, subject);
-            Assert.AreEqual(company, subject);
-        }
-
-        [Test]
-        public async Task TestFindSubject()
-        {
-            // create a test person and test company
-            var person = _personFiller.FillPerson();
-            var company = _companyFiller.FillCompany();
-            var savePersonCommand = new SaveSubjectCommand {Subject = person};
-            var saveCompanyCommand = new SaveSubjectCommand {Subject = company};
-            var savePersonTask = _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(savePersonCommand);
-            var saveCompanyTask = _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(saveCompanyCommand);
-
-            // since we can, we'll test parallel commands and queries
-            await Task.WhenAll(savePersonTask, saveCompanyTask);
-
-            // verify test data creation
-            var savePersonMessage = savePersonTask.Result.Message;
-            var saveCompanyMessage = saveCompanyTask.Result.Message;
-            if (savePersonMessage.Error != null) Assert.Fail(savePersonMessage.Error);
-            if (!savePersonMessage.Success) Assert.Fail("Unable to save test person data");
-            person = (Person) savePersonMessage.Subject;
-            if (saveCompanyMessage.Error != null) Assert.Fail(saveCompanyMessage.Error);
-            if (!saveCompanyMessage.Success) Assert.Fail("Unable to save test company data");
-            company = (Company) saveCompanyMessage.Subject;
-
-            // verify that we can retrieve both a person and a company, and that retrieving all subjects returns both people and companies
-            var findAllQuery = new FindSubjectsQuery();
-            var findPersonQuery = new FindSubjectsQuery {SubjectId = person.Id};
-            var findCompanyQuery = new FindSubjectsQuery {SubjectId = company.Id};
-            var findAllTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findAllQuery);
-            var findPersonTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findPersonQuery);
-            var findCompanyTask = _findSubjectsClient.GetResponse<FindSubjectsQueryResult>(findCompanyQuery);
-            await Task.WhenAll(findAllTask, findPersonTask, findCompanyTask);
-
-            var findAllMessage = findAllTask.Result.Message;
-            var findPersonMessage = findPersonTask.Result.Message;
-            var findCompanyMessage = findCompanyTask.Result.Message;
-
-            // check for errors
-            if (findAllMessage.Error != null)
-                Assert.Fail(findAllMessage.Error);
-            if (findPersonMessage.Error != null)
-                Assert.Fail(findPersonMessage.Error);
-            if (findCompanyMessage.Error != null)
-                Assert.Fail(findCompanyMessage.Error);
-
-            // verify that find subjects returns both people and companies
-            if (findAllMessage.Error != null)
-                Assert.Fail(findAllMessage.Error);
-            Assert.IsTrue(findAllMessage.Results.Contains(person));
-            Assert.IsTrue(findAllMessage.Results.Contains(company));
-                
-            // verify that if a subject is a person, a Person object is returned
-            if (findPersonMessage.Error != null)
-                Assert.Fail(findPersonMessage.Error);
-            Assert.IsTrue(findPersonMessage.Results.Count == 1);
-            // AreEqual() will also ensure that the result is of the correct type, since a generic Subject can't be equal to a Person
-            Assert.AreEqual(person, findPersonMessage.Results.Single());
-
-            // verify that if a subject is a company, a Company object is returned
-            if (findCompanyMessage.Error != null)
-                Assert.Fail(findCompanyMessage.Error);
-            Assert.IsTrue(findCompanyMessage.Results.Count == 1);
-            Assert.AreEqual(company, findCompanyMessage.Results.Single());
-        }
-
-        [Test]
-        public async Task TestRemoveSubject()
-        {
-            var person = _personFiller.FillPerson();
-            var company = _companyFiller.FillCompany();
-            var savePersonCommand = new SaveSubjectCommand {Subject = person};
-            var saveCompanyCommand = new SaveSubjectCommand {Subject = company};
-            var savePersonTask = _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(savePersonCommand);
-            var saveCompanyTask = _saveSubjectClient.GetResponse<SaveSubjectCommandResult>(saveCompanyCommand);
-            await Task.WhenAll(savePersonTask, saveCompanyTask);
-            var savePersonMessage = savePersonTask.Result.Message;
-            var saveCompanyMessage = saveCompanyTask.Result.Message;
-            person = (Person) savePersonMessage.Subject;
-            company = (Company) saveCompanyMessage.Subject;
-            Assert.NotNull(person);
-            Assert.NotNull(company);
-            var removePersonCommand = new RemoveSubjectCommand {SubjectId = person.Id};
-            var removeCompanyCommand = new RemoveSubjectCommand {SubjectId = company.Id};
-            var removePersonTask = _removeSubjectClient.GetResponse<RemoveSubjectCommandResult>(removePersonCommand);
-            var removeCompanyTask = _removeSubjectClient.GetResponse<RemoveSubjectCommandResult>(removeCompanyCommand);
-            await Task.WhenAll(removePersonTask, removeCompanyTask);
-            var removePersonMessage = removePersonTask.Result.Message;
-            var removeCompanyMessage = removeCompanyTask.Result.Message;
-            if (removePersonMessage.Error != null) Assert.Fail(removePersonMessage.Error);
-            if (removeCompanyMessage.Error != null) Assert.Fail(removeCompanyMessage.Error);
-            Assert.IsTrue(removePersonMessage.Success);
-            Assert.IsTrue(removeCompanyMessage.Success);
+            var busControl = _services.GetService<IBusControl>();
+            busControl?.Stop();
         }
     }
 }

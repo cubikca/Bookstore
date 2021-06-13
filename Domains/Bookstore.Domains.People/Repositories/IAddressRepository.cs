@@ -5,11 +5,7 @@ using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Domains.People.Repositories
 {
-    public interface IAddressRepository
+    public interface IAddressRepository : IRepository<Address>
     {
-        Task<Address> SaveAddress(Address address);
-        Task<ICollection<Address>> FindAllAddresses();
-        Task<Address> FindAddressById(Guid addressId);
-        Task<bool> RemoveAddress(Guid addressId);
     }
 }

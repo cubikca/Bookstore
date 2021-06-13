@@ -1,20 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Domains.Book.Models
 {
-    public class Publisher : IEquatable<Publisher>
+    public class Publisher : IDomainObject, IEquatable<Publisher>
     {
         public Guid Id { get; set; }
-        public Subject Details { get; set; }
-        public IList<Book> Books { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
+        public Subject Profile { get; set; }
 
         public bool Equals(Publisher other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id);
+            return Profile.Equals(other.Profile);
         }
 
         public override bool Equals(object obj)
@@ -27,7 +30,13 @@ namespace Bookstore.Domains.Book.Models
 
         public override int GetHashCode()
         {
-            return Id.GetHashCode();
+            return HashCode.Combine(Id, Profile);
+        }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue(nameof(Id), Id);
+            info.AddValue(nameof(Profile), Profile);
         }
     }
 }

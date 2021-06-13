@@ -15,7 +15,7 @@ namespace Bookstore.Entities.People.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.6");
+                .HasAnnotation("ProductVersion", "5.0.5");
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Address", b =>
                 {
@@ -26,17 +26,23 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("City")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("CountryAbbreviation")
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid?>("CountryId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("PostalCode")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ProvinceAbbreviation")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("ProvinceCountryAbbreviation")
-                        .HasColumnType("varchar(255)");
+                    b.Property<Guid?>("ProvinceId")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Street1")
                         .HasColumnType("longtext");
@@ -44,24 +50,49 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Street2")
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CountryAbbreviation");
+                    b.HasIndex("CountryId");
 
-                    b.HasIndex("ProvinceAbbreviation", "ProvinceCountryAbbreviation");
+                    b.HasIndex("ProvinceId");
 
                     b.ToTable("Addresses");
                 });
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Country", b =>
                 {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Abbreviation")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.HasKey("Abbreviation");
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
 
                     b.ToTable("Countries");
                 });
@@ -72,11 +103,26 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Email")
                         .HasColumnType("longtext");
 
                     b.Property<bool>("Primary")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
 
                     b.Property<bool>("Verified")
                         .HasColumnType("tinyint(1)");
@@ -92,10 +138,19 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("char(36)");
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<Guid?>("MailingAddressId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("OrganizationId")
                         .HasColumnType("char(36)");
 
                     b.Property<bool>("Primary")
@@ -104,11 +159,17 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<Guid?>("StreetAddressId")
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
-
                     b.HasIndex("MailingAddressId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("StreetAddressId");
 
@@ -136,6 +197,15 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Facebook")
                         .HasColumnType("longtext");
 
@@ -148,12 +218,110 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Twitter")
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Website")
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
                     b.ToTable("OnlinePresence");
+                });
+
+            modelBuilder.Entity("Bookstore.Entities.People.Models.Organization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Organizations");
+                });
+
+            modelBuilder.Entity("Bookstore.Entities.People.Models.Person", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid?>("EmailAddressId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("FamilyName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Initial")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid?>("MailingAddressId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("OnlinePresenceId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("PhoneNumberId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("StreetAddressId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Suffix")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmailAddressId");
+
+                    b.HasIndex("MailingAddressId");
+
+                    b.HasIndex("OnlinePresenceId");
+
+                    b.HasIndex("PhoneNumberId");
+
+                    b.HasIndex("StreetAddressId");
+
+                    b.ToTable("People");
                 });
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.PersonGivenName", b =>
@@ -203,10 +371,25 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("AreaCode")
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Extension")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Phone")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
@@ -216,96 +399,50 @@ namespace Bookstore.Entities.People.Migrations
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Province", b =>
                 {
-                    b.Property<string>("Abbreviation")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("CountryAbbreviation")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Abbreviation", "CountryAbbreviation");
-
-                    b.HasIndex("CountryAbbreviation");
-
-                    b.ToTable("Provinces");
-                });
-
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Subject", b =>
-                {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("EmailAddressId")
+                    b.Property<string>("Abbreviation")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid?>("CountryId")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("MailingAddressId")
-                        .HasColumnType("char(36)");
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("OnlinePresenceId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
 
-                    b.Property<Guid?>("PhoneNumberId")
-                        .HasColumnType("char(36)");
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
 
-                    b.Property<Guid?>("StreetAddressId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EmailAddressId");
+                    b.HasIndex("CountryId");
 
-                    b.HasIndex("MailingAddressId");
-
-                    b.HasIndex("OnlinePresenceId");
-
-                    b.HasIndex("PhoneNumberId");
-
-                    b.HasIndex("StreetAddressId");
-
-                    b.ToTable("Subjects");
-                });
-
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Company", b =>
-                {
-                    b.HasBaseType("Bookstore.Entities.People.Models.Subject");
-
-                    b.Property<string>("CompanyName")
-                        .HasColumnType("longtext");
-
-                    b.ToTable("Companies");
-                });
-
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Person", b =>
-                {
-                    b.HasBaseType("Bookstore.Entities.People.Models.Subject");
-
-                    b.Property<string>("FamilyName")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Initial")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Suffix")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Title")
-                        .HasColumnType("longtext");
-
-                    b.ToTable("People");
+                    b.ToTable("Provinces");
                 });
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Address", b =>
                 {
                     b.HasOne("Bookstore.Entities.People.Models.Country", "Country")
                         .WithMany()
-                        .HasForeignKey("CountryAbbreviation");
+                        .HasForeignKey("CountryId");
 
                     b.HasOne("Bookstore.Entities.People.Models.Province", "Province")
                         .WithMany()
-                        .HasForeignKey("ProvinceAbbreviation", "ProvinceCountryAbbreviation");
+                        .HasForeignKey("ProvinceId");
 
                     b.Navigation("Country");
 
@@ -314,23 +451,21 @@ namespace Bookstore.Entities.People.Migrations
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Location", b =>
                 {
-                    b.HasOne("Bookstore.Entities.People.Models.Company", "Company")
-                        .WithMany("Locations")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Bookstore.Entities.People.Models.Address", "MailingAddress")
                         .WithMany()
                         .HasForeignKey("MailingAddressId");
+
+                    b.HasOne("Bookstore.Entities.People.Models.Organization", "Organization")
+                        .WithMany("Locations")
+                        .HasForeignKey("OrganizationId");
 
                     b.HasOne("Bookstore.Entities.People.Models.Address", "StreetAddress")
                         .WithMany()
                         .HasForeignKey("StreetAddressId");
 
-                    b.Navigation("Company");
-
                     b.Navigation("MailingAddress");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("StreetAddress");
                 });
@@ -354,40 +489,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Navigation("Location");
                 });
 
-            modelBuilder.Entity("Bookstore.Entities.People.Models.PersonGivenName", b =>
-                {
-                    b.HasOne("Bookstore.Entities.People.Models.Person", "Person")
-                        .WithMany("GivenNames")
-                        .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Person");
-                });
-
-            modelBuilder.Entity("Bookstore.Entities.People.Models.PersonKnownAsName", b =>
-                {
-                    b.HasOne("Bookstore.Entities.People.Models.Person", "Person")
-                        .WithMany("KnownAs")
-                        .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Person");
-                });
-
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Province", b =>
-                {
-                    b.HasOne("Bookstore.Entities.People.Models.Country", "Country")
-                        .WithMany("Provinces")
-                        .HasForeignKey("CountryAbbreviation")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Country");
-                });
-
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Subject", b =>
+            modelBuilder.Entity("Bookstore.Entities.People.Models.Person", b =>
                 {
                     b.HasOne("Bookstore.Entities.People.Models.EmailAddress", "EmailAddress")
                         .WithMany()
@@ -420,27 +522,35 @@ namespace Bookstore.Entities.People.Migrations
                     b.Navigation("StreetAddress");
                 });
 
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Company", b =>
+            modelBuilder.Entity("Bookstore.Entities.People.Models.PersonGivenName", b =>
                 {
-                    b.HasOne("Bookstore.Entities.People.Models.Subject", null)
-                        .WithOne()
-                        .HasForeignKey("Bookstore.Entities.People.Models.Company", "Id")
+                    b.HasOne("Bookstore.Entities.People.Models.Person", "Person")
+                        .WithMany("GivenNames")
+                        .HasForeignKey("PersonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Person");
                 });
 
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Person", b =>
+            modelBuilder.Entity("Bookstore.Entities.People.Models.PersonKnownAsName", b =>
                 {
-                    b.HasOne("Bookstore.Entities.People.Models.Subject", null)
-                        .WithOne()
-                        .HasForeignKey("Bookstore.Entities.People.Models.Person", "Id")
+                    b.HasOne("Bookstore.Entities.People.Models.Person", "Person")
+                        .WithMany("KnownAs")
+                        .HasForeignKey("PersonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Person");
                 });
 
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Country", b =>
+            modelBuilder.Entity("Bookstore.Entities.People.Models.Province", b =>
                 {
-                    b.Navigation("Provinces");
+                    b.HasOne("Bookstore.Entities.People.Models.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId");
+
+                    b.Navigation("Country");
                 });
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Location", b =>
@@ -448,7 +558,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Navigation("Contacts");
                 });
 
-            modelBuilder.Entity("Bookstore.Entities.People.Models.Company", b =>
+            modelBuilder.Entity("Bookstore.Entities.People.Models.Organization", b =>
                 {
                     b.Navigation("Locations");
                 });

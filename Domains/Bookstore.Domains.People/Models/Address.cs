@@ -4,9 +4,13 @@ using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
-    public class Address : ISerializable, IEquatable<Address>
+    public class Address : IDomainObject, IEquatable<Address>
     {
         public Guid Id { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
         public string Street1 { get; set; }
         public string Street2 { get; set; }
         public string City { get; set; }
@@ -29,7 +33,7 @@ namespace Bookstore.Domains.People.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && Street1 == other.Street1 && Street2 == other.Street2 && City == other.City && PostalCode == other.PostalCode && Equals(Province, other.Province) && Equals(Country, other.Country);
+            return Street1 == other.Street1 && Street2 == other.Street2 && City == other.City && PostalCode == other.PostalCode && Equals(Province, other.Province) && Equals(Country, other.Country);
         }
 
         public override bool Equals(object obj)

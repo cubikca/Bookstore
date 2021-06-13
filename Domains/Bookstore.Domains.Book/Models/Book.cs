@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Domains.Book.Models
 {
-    public class Book : IEquatable<Book>
+    public class Book : IDomainObject, IEquatable<Book>
     {
         public Guid Id { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
         public string ISBN { get; set; }
         public string Title { get; set; }
         public string Subtitle { get; set; }
@@ -21,7 +26,7 @@ namespace Bookstore.Domains.Book.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && ISBN == other.ISBN && Title == other.Title && Subtitle == other.Subtitle && Edition == other.Edition && PublishDate.Equals(other.PublishDate) && Cost == other.Cost && Price == other.Price;
+            return ISBN == other.ISBN && Title == other.Title && Subtitle == other.Subtitle && Edition == other.Edition && PublishDate.Equals(other.PublishDate) && Cost == other.Cost && Price == other.Price;
         }
 
         public override bool Equals(object obj)
@@ -35,6 +40,20 @@ namespace Bookstore.Domains.Book.Models
         public override int GetHashCode()
         {
             return HashCode.Combine(Id, ISBN, Title, Subtitle, Edition, PublishDate, Cost, Price);
+        }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue(nameof(Id), Id);
+            info.AddValue(nameof(ISBN), ISBN);
+            info.AddValue(nameof(Title), Title);
+            info.AddValue(nameof(Subtitle), Subtitle);
+            info.AddValue(nameof(Edition), Edition);
+            info.AddValue(nameof(PublishDate), PublishDate);
+            info.AddValue(nameof(Cost), Cost);
+            info.AddValue(nameof(Price), Price);
+            info.AddValue(nameof(Authors), Authors);
+            info.AddValue(nameof(Publisher), Publisher);
         }
     }
 }

@@ -28,13 +28,13 @@ namespace Bookstore.Services.People.QueryHandlers
             {
                 if (context.Message.PersonId.HasValue)
                 {
-                    var person = await _people.FindPersonById(context.Message.PersonId.Value);
+                    var person = await _people.Find(context.Message.PersonId.Value);
                     if (person != null)
                         result.Results.Add(person);
                 }
                 else
                 {
-                    var people = await _people.FindAllPeople();
+                    var people = await _people.FindAll();
                     result.Results = people.ToList();
                 }
             }

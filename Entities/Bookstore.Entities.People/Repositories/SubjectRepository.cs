@@ -1,116 +1,59 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Bookstore.Domains.People;
 using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Bookstore.Entities.People.Repositories
 {
-    public class SubjectRepository : RepositoryBase, ISubjectRepository
+    /* A convenience repository that violates loose coupling principles. Don't go too far down this road. */
+    public class SubjectRepository : ISubjectRepository
     {
-        private readonly ILogger<SubjectRepository> _logger;
         private readonly IPersonRepository _people;
-        private readonly ICompanyRepository _companies;
+        private readonly IOrganizationRepository _organizations;
 
-        public SubjectRepository(IDbContextFactory<PeopleContext> dbFactory, IMapper mapper, IPersonRepository people, ICompanyRepository companies, ILogger<SubjectRepository> logger) : base(dbFactory, mapper)
+        public SubjectRepository(IPersonRepository people, IOrganizationRepository organizations)
         {
             _people = people;
-            _companies = companies;
-            _logger = logger;
+            _organizations = organizations;
+        }
+        
+        public async Task<Subject> Save(Subject model)
+        {
+            if (model is Person person)
+                return await _people.Save(person);
+            if (model is Organization company)
+                return await _organizations.Save(company);
+            throw new PeopleException("Cannot save unknown Subject type");
         }
 
-        public async Task<Subject> SaveSubject(Subject subject)
+        public async Task<Subject> Find(Guid id)
         {
-            try
-            {
-                await using var db = DbFactory.CreateDbContext();
-                var result = subject switch
-                {
-                    Person person => (Subject) await _people.SavePerson(person),
-                    Company company => await _companies.SaveCompany(company),
-                    _ => throw new PeopleException("Unknown subject type")
-                };
-                return result;
-            }
-            catch (Exception ex)
-            {
-                 _logger.LogError(ex, "Unable to save Subject");
-                 throw new PeopleException("Unable to save Subject", ex);
-            }
+            var person = await _people.Find(id);
+            var company = await _organizations.Find(id);
+            return (Subject) person ?? company;
         }
 
-        public async Task<ICollection<Subject>> FindAllSubjects()
+        public async Task<ICollection<Subject>> FindAll()
         {
-            try
-            {
-                await using var db = DbFactory.CreateDbContext();
-                var entities = await db.Subjects.ToListAsync();
-                var subjects = new List<Subject>();
-                foreach (var entity in entities)
-                {
-                    Subject subject = entity switch
-                    {
-                        Models.Person person => MapPerson(person),
-                        Models.Company company => MapCompany(company),
-                        _ => null
-                    };
-                    if (subject != null)
-                        subjects.Add(subject);
-                }
-                return subjects;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unable to retrieve subject data");
-                throw new PeopleException("Unable to retrieve subject data", ex);
-            }
+            var people = (await _people.FindAll()).Cast<Subject>();
+            var companies = (await _organizations.FindAll()).Cast<Subject>();
+            return people.Union(companies).ToList();
         }
 
-        public async Task<Subject> FindSubjectById(Guid subjectId)
+        public async Task<bool> Remove(Guid id)
         {
-            try
-            {
-                await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Subjects.SingleOrDefaultAsync(s => s.Id == subjectId);
-                if (entity == null) return null;
-                Subject subject = entity switch
-                {
-                    Models.Person person => MapPerson(person),
-                    Models.Company company => MapCompany(company),
-                    _ => null
-                };
-                return subject;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unable to retrieve subject data");
-                throw new PeopleException("Unable to retrieve subject data", ex);
-            }
-        }
-
-        public async Task<bool> RemoveSubject(Guid subjectId)
-        {
-            try
-            {
-                await using var db = DbFactory.CreateDbContext();
-                var entity = await db.Subjects.SingleOrDefaultAsync(s => s.Id == subjectId);
-                var result = entity switch
-                {
-                    Models.Person person => await _people.RemovePerson(person.Id),
-                    Models.Company company => await _companies.RemoveCompany(company.Id),
-                    _ => false
-                };
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unable to remove subject");
-                throw new PeopleException("Unable to remove subject", ex);
-            }
+            var person = await _people.Find(id);
+            var company = await _organizations.Find(id);
+            var personRemoved = false;
+            var companyRemoved = false;
+            if (person != null)
+                personRemoved = await _people.Remove(id);
+            else if (company != null)
+                companyRemoved = await _organizations.Remove(id);
+            return personRemoved || companyRemoved;
         }
     }
 }

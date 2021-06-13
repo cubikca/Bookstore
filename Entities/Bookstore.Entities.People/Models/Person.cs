@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,11 @@ namespace Bookstore.Entities.People.Models
         /// <summary>
         /// The honorific title for this person, e.g. Dr. Mr. Ms. Mrs.
         /// </summary>
+        public Guid? StreetAddressId { get; set; }
+        public Guid? MailingAddressId { get; set; }
+        public Guid? EmailAddressId { get; set; }
+        public Guid? PhoneNumberId { get; set; }
+        public Guid? OnlinePresenceId { get; set; }
         public string Title { get; set; }
         /// <summary>
         /// All of the names for this person except the family name
@@ -42,8 +48,9 @@ namespace Bookstore.Entities.People.Models
                 var builder = new StringBuilder();
                 if (!string.IsNullOrEmpty(Title))
                     builder.Append($"{Title} ");
-                foreach (var name in GivenNames)
-                    builder.Append($"{name.GivenName} ");
+                if (GivenNames != null)
+                    foreach (var name in GivenNames)
+                        builder.Append($"{name.GivenName} ");
                 if (!string.IsNullOrEmpty(Initial))
                     builder.Append($"{Initial} ");
                 builder.Append(FamilyName);
@@ -53,14 +60,12 @@ namespace Bookstore.Entities.People.Models
             }
         }
 
-        // There are a lot of possibilities here but we can only have one
-        // This one seems reasonable and any other combination can be added where it is needed
         public override string Name
         {
             get
             {
                 var builder = new StringBuilder();
-                if (GivenNames.Any())
+                if (GivenNames?.Any() == true)
                     builder.Append($"{GivenNames[0]} ");
                 if (!string.IsNullOrEmpty(FamilyName))
                     builder.Append($"{FamilyName}");
@@ -68,7 +73,22 @@ namespace Bookstore.Entities.People.Models
             }
         }
 
-        public override Address StreetAddress { get; set; }
-        public override Address MailingAddress { get; set; }
+        private Address _streetAddress;
+
+        public override Address StreetAddress
+        {
+            get => _streetAddress;
+            set => _streetAddress = value;
+        }
+        private Address _mailingAddress;
+
+        public override Address MailingAddress
+        {
+            get => _mailingAddress; 
+            set => _mailingAddress = value;
+        }
+        public virtual EmailAddress EmailAddress { get; set; }
+        public virtual PhoneNumber PhoneNumber { get; set; }
+        public virtual OnlinePresence OnlinePresence { get; set; }
     }
 }

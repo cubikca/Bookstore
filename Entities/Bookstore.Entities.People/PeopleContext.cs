@@ -1,16 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using Bookstore.Entities.People.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Bookstore.Entities.People
 {
     public class PeopleContext : DbContext
     {
-        public PeopleContext(DbContextOptions<PeopleContext> dbopt) : base(dbopt) { }
+        public PeopleContext(DbContextOptions<PeopleContext> dbopt) : base(dbopt)
+        {
+        }
 
-        public DbSet<Company> Companies { get; set; }
+        public DbSet<Organization> Organizations { get; set; }
         public DbSet<Person> People { get; set; }
         public DbSet<PersonGivenName> PersonGivenNames { get; set; }
         public DbSet<PersonKnownAsName> PersonKnownAsNames { get; set; }
@@ -26,8 +31,41 @@ namespace Bookstore.Entities.People
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Ignore<Subject>();
             modelBuilder.Entity<LocationContact>().HasKey(lc => new {lc.LocationId, lc.ContactId});
-            modelBuilder.Entity<Province>().HasKey(p => new {p.Abbreviation, p.CountryAbbreviation});
+            /***
+             * Soft deletion is ideal for both auditing and data integrity purposes. The code below automatically
+             * filters out deleted objects from the set for any IEntity object. Note that deleted objects still
+             * can be found using Single() so ensure your Single() query includes !Deleted
+             */
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(IEntity).IsAssignableFrom(entityType.ClrType) && entityType.ClrType.BaseType == null)
+                    entityType.AddDeletedQueryFilter();
+            }
         }
     }
+
+     public static class DeletedQueryExtension
+     {
+         public static void AddDeletedQueryFilter(this IMutableEntityType entityData)
+         {
+             var methodToCall = typeof(DeletedQueryExtension)
+                 .GetMethod(nameof(GetDeletedFilter), BindingFlags.NonPublic | BindingFlags.Static)?
+                 .MakeGenericMethod(entityData.ClrType);
+             var filter = methodToCall?.Invoke(null, new object[] { });
+             if (filter != null)
+                 entityData.SetQueryFilter((LambdaExpression) filter);
+             entityData.AddIndex(entityData.FindProperty(nameof(IEntity.Deleted)));
+         }
+ 
+         private static LambdaExpression GetDeletedFilter<TEntity>()
+             where TEntity : class, IEntity
+         {
+             Expression<Func<TEntity, bool>> filter = x => !x.Deleted;
+             return filter;
+         }
+    }
 }
+
+

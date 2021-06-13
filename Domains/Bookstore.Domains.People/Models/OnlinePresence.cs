@@ -4,9 +4,13 @@ using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
-    public class OnlinePresence : ISerializable, IEquatable<OnlinePresence>
+    public class OnlinePresence : IDomainObject, IEquatable<OnlinePresence>
     {
         public Guid Id { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
         public string Website { get; set; }
         public string Facebook { get; set; }
         public string Twitter { get; set; }

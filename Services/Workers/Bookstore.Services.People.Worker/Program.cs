@@ -1,28 +1,18 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text.Json;
 using System.Threading.Tasks;
-using Autofac;
-using Autofac.Extensions.DependencyInjection;
 using AutoMapper;
-using Bookstore.Domains.People.Commands;
-using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Repositories;
 using Bookstore.Entities.People;
 using Bookstore.Entities.People.AutoMapper;
 using Bookstore.Entities.People.Repositories;
 using Bookstore.Services.People.CommandHandlers;
 using MassTransit;
-using MassTransit.Serialization;
-using MediatR;
-using MediatR.Extensions.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Bookstore.Services.Workers.People
 {
@@ -33,21 +23,21 @@ namespace Bookstore.Services.Workers.People
             await CreateHostBuilder(args).Build().RunAsync();
         }
 
-        private static void BuildServiceContainer(IServiceCollection services)
+        private static void BuildServiceContainer(IServiceCollection services, IConfiguration config)
         {
             services.AddLogging(cfg => cfg.AddConsole());
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
-                opt.UseLazyLoadingProxies();
-                var connectionString = "server=mysql;user=brian;password=development;database=PeopleDevelopment";
+                var connectionString = config.GetConnectionString("PeopleContext");
                 opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();
-            services.AddScoped<ICompanyRepository, CompanyRepository>();
-            services.AddScoped<ICountryRepository, AddressRepository>();
-            services.AddScoped<IProvinceRepository, AddressRepository>();
+            services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+            services.AddScoped<ICountryRepository, CountryRepository>();
+            services.AddScoped<IProvinceRepository, ProvinceRepository>();
             services.AddScoped<IAddressRepository, AddressRepository>();
+            services.AddScoped<ILocationRepository, LocationRepository>();
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<DefaultProfile>();
@@ -57,26 +47,23 @@ namespace Bookstore.Services.Workers.People
             services.AddMassTransit(mt =>
             {
                 mt.AddConsumers(Assembly.GetAssembly(typeof(SaveSubjectCommandHandler)));
+                var peopleConnection = config.GetConnectionString("PeopleService");
                 mt.UsingRabbitMq((ctx, cfg) =>
                 {
-                    cfg.Host(new Uri("amqp://rabbitmq:5672/people"), host =>
-                    {
-                        host.Username("brian");
-                        host.Password("development");
-                    });
+                    cfg.Host(new Uri(peopleConnection));
                     cfg.UseBsonSerializer();
                     cfg.ConfigureEndpoints(ctx);
                 });
             });
+            services.AddMassTransitHostedService();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    BuildServiceContainer(services);
+                    BuildServiceContainer(services, hostContext.Configuration);
                     services.AddHostedService<Worker>();
-                    services.AddLogging(cfg => cfg.AddConsole());
                 });
     }
 }

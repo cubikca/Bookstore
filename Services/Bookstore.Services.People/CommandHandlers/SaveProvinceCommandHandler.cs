@@ -24,7 +24,7 @@ namespace Bookstore.Services.People.CommandHandlers
             var result = new SaveProvinceCommandResult();
             try
             {
-                var province = await _provinces.SaveProvince(context.Message.Province);
+                var province = await _provinces.Save(context.Message.Province);
                 result.Province = province;
             }
             catch (Exception ex)

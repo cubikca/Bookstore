@@ -22,7 +22,7 @@ namespace Bookstore.Services.Book.CommandHandlers
             var result = new SaveBookCommandResult();
             try
             {
-                result.Book = await _books.SaveBook(context.Message.Book);
+                result.Book = await _books.Save(context.Message.Book);
                 result.Success = true;
             }
             catch (Exception ex)

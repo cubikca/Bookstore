@@ -13,26 +13,19 @@ namespace Bookstore.Services.People.CommandHandlers
 {
     public class SaveSubjectCommandHandler : IConsumer<SaveSubjectCommand>
     {
-        private readonly IPersonRepository _people;
-        private readonly ICompanyRepository _companies;
+        private readonly ISubjectRepository _subjects;
 
-        public SaveSubjectCommandHandler(IPersonRepository people, ICompanyRepository companies)
+        public SaveSubjectCommandHandler(ISubjectRepository subjects)
         {
-            _people = people;
-            _companies = companies;
+            _subjects = subjects;
         }
 
         public async Task Consume(ConsumeContext<SaveSubjectCommand> context)
         {
-            Subject saved = null;
             var result = new SaveSubjectCommandResult();
             try
             {
-                if (context.Message.Subject is Person person)
-                    saved = await _people.SavePerson(person);
-                else if (context.Message.Subject is Company company)
-                    saved = await _companies.SaveCompany(company);
-                result.Subject = saved;
+                result.Subject = await _subjects.Save(context.Message.Subject);
                 result.Success = true;
             }
             catch (Exception ex)

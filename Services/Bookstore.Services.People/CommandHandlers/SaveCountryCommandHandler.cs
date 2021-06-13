@@ -25,7 +25,7 @@ namespace Bookstore.Services.People.CommandHandlers
             var result = new SaveCountryCommandResult();
             try
             {
-                var country = await _countries.SaveCountry(context.Message.Country);
+                var country = await _countries.Save(context.Message.Country);
                 result.Country = country;
                 result.Success = true;
             }

@@ -28,18 +28,23 @@ namespace Bookstore.Services.People.QueryHandlers
             var result = new FindProvincesQueryResult {Results = queryResults};
             try
             {
-                if (context.Message.ProvinceAbbreviation != null && context.Message.CountryAbbreviation != null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
-                if (context.Message.ProvinceAbbreviation == null && context.Message.CountryAbbreviation == null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
-                if (context.Message.ProvinceAbbreviation != null)
+                if (context.Message.ProvinceId != null && context.Message.CountryId != null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
+                if (!(context.Message.CountryId.HasValue || context.Message.ProvinceId.HasValue))
                 {
-                    var province = await _provinces.FindProvinceByAbbreviation(context.Message.ProvinceAbbreviation);
-                    if (province != null) queryResults.Add(province);
-                }
-                if (context.Message.CountryAbbreviation != null)
-                {
-                    var provinces = await _provinces.FindProvincesByCountryAbbreviation(context.Message.CountryAbbreviation);
+                    var provinces = await _provinces.FindAll();
                     queryResults.AddRange(provinces ?? Enumerable.Empty<Province>());
                 }
+                if (context.Message.ProvinceId.HasValue)
+                {
+                    var province = await _provinces.Find(context.Message.ProvinceId.Value);
+                    if (province != null) queryResults.Add(province);
+                }
+                if (context.Message.CountryId.HasValue)
+                {
+                    var provinces = await _provinces.FindByCountry(context.Message.CountryId.Value);
+                    queryResults.AddRange(provinces ?? Enumerable.Empty<Province>());
+                }
+                result.Success = true;
             }
             catch (Exception ex)
             {

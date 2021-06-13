@@ -1,100 +1,94 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using AutoMapper;
-using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Repositories;
 using Bookstore.Entities.People.AutoMapper;
 using Bookstore.Entities.People.Repositories;
+using Bookstore.ObjectFillers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
-using Tynamix.ObjectFiller;
 
 namespace Bookstore.Entities.People.Tests
 {
     public class CountryTests
     {
-        private IMapper _mapper;
-        // we want to test all three interfaces, so use the class type instead
-        private AddressRepository _addresses;
-        private Filler<Country> _countryFiller;
-        private Filler<Province> _provinceFiller;
+        private CountryFiller _countryFiller;
+        private IServiceProvider _services;
 
-        [OneTimeSetUp]
-        public async Task OneTimeSetUp()
+        private void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
-            var services = new ServiceCollection();
-            services.AddDbContextFactory<PeopleContext>(opt =>
+            services.AddLogging(cfg => cfg.AddConsole());
+            services.AddDbContextFactory<PeopleContext>(options =>
             {
-                opt.UseLazyLoadingProxies();
-                var connectionString = "server=localhost;user=brian;password=development;database=PeopleEntitiesTests";
-                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                var connectionString = config.GetConnectionString("PeopleContext");
+                options.EnableDetailedErrors();
+                options.EnableSensitiveDataLogging();
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
-            var sp = services.BuildServiceProvider();
-            var dbFactory = sp.GetService<IDbContextFactory<PeopleContext>>();
-            Assert.NotNull(dbFactory);
-            using var loggerFactory = LoggerFactory.Create(cfg => cfg.AddConsole());
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<DefaultProfile>();
             });
-            _mapper = mapperConfig.CreateMapper();
-            _addresses = new AddressRepository(dbFactory, _mapper, sp.GetService<ILogger<AddressRepository>>());
-            _countryFiller = new Filler<Country>();
-            _provinceFiller = new Filler<Province>();
-            await using var db = dbFactory.CreateDbContext();
+            var mapper = mapperConfig.CreateMapper();
+            services.AddSingleton(mapper);
+            services.AddScoped<ICountryRepository, CountryRepository>();
+        }
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            var services = new ServiceCollection();
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+                .AddJsonFile("appsettings.json")
+                .Build();
+            ConfigureServices(services, config);
+            _services = services.BuildServiceProvider();
+            _countryFiller = new CountryFiller();
        }
 
         [Test]
         public async Task TestSave()
         {
-            var country = _countryFiller.Create();
-            var created = await _addresses.SaveCountry(country);
+            var countries = _services.GetRequiredService<ICountryRepository>();
+            var country = _countryFiller.FillCountry();
+            var created = await countries.Save(country);
             Assert.AreNotSame(country, created);
             Assert.AreEqual(country, created);
-            var province = _provinceFiller.Create();
-            province.Country = created;
-            var createdProvince = await _addresses.SaveProvince(province);
-            Assert.AreNotSame(province, createdProvince);
-            Assert.AreEqual(province, createdProvince);
+            country = _countryFiller.FillCountry();
+            country.Id = created.Id;
+            var updated = await countries.Save(country);
+            Assert.AreNotSame(country, updated);
+            Assert.AreEqual(country, updated);
         }
 
         [Test]
         public async Task TestFind()
         {
-            var country = _countryFiller.Create();
-            country = await _addresses.SaveCountry(country);
-            var province = _provinceFiller.Create();
-            province.Country = country;
-            province = await _addresses.SaveProvince(province);
-            var found = await _addresses.FindCountryByAbbreviation(country.Abbreviation);
-            var foundProvince = await _addresses.FindProvinceByAbbreviation(province.Abbreviation);
-            var all = await _addresses.FindAllCountries();
-            var provinces = await _addresses.FindProvincesByCountryAbbreviation(country.Abbreviation);
+            var countries = _services.GetRequiredService<ICountryRepository>();
+            var country = _countryFiller.FillCountry();
+            country = await countries.Save(country);
+            var found = await countries.Find(country.Id);
+            var all = await countries.FindAll();
             Assert.AreNotSame(country, found);
             Assert.AreEqual(country, found);
             Assert.IsTrue(all.Contains(found));
-            Assert.AreNotSame(province, foundProvince);
-            Assert.AreEqual(province, foundProvince);
-            Assert.IsTrue(provinces.Contains(foundProvince));
         }
 
         [Test]
         public async Task TestRemove()
         {
-            var country = _countryFiller.Create();
-            country = await _addresses.SaveCountry(country);
-            var province = _provinceFiller.Create();
-            province.Country = country;
-            province = await _addresses.SaveProvince(province);
-            var provinceRemoved = await _addresses.RemoveProvince(province.Abbreviation);
-            Assert.IsTrue(provinceRemoved);
-            var foundProvince = await _addresses.FindProvinceByAbbreviation(province.Abbreviation);
-            Assert.IsNull(foundProvince);
-            var countryRemoved = await _addresses.RemoveCountry(country.Abbreviation);
-            Assert.IsTrue(countryRemoved);
-            var found = await _addresses.FindCountryByAbbreviation(country.Abbreviation);
+            var countries = _services.GetRequiredService<ICountryRepository>();
+            var country = _countryFiller.FillCountry();
+            country = await countries.Save(country);
+            var removed = await countries.Remove(country.Id);
+            Assert.IsTrue(removed);
+            var found = await countries.Find(country.Id);
             Assert.IsNull(found);
         }
     }

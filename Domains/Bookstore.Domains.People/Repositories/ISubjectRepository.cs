@@ -6,11 +6,7 @@ using Bookstore.Domains.People.Models;
 
 namespace Bookstore.Domains.People.Repositories
 {
-    public interface ISubjectRepository
+    public interface ISubjectRepository : IRepository<Subject>
     {
-        Task<Subject> SaveSubject(Subject subject);
-        Task<ICollection<Subject>> FindAllSubjects();
-        Task<Subject> FindSubjectById(Guid subjectId);
-        Task<bool> RemoveSubject(Guid subjectId);
     }
 }

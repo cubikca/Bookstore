@@ -7,6 +7,6 @@ namespace Bookstore.Domains.People.Commands
 {
     public class RemoveProvinceCommand 
     {
-        public string ProvinceAbbreviation { get; set; }
+        public Guid ProvinceId { get; set; }
     }
 }

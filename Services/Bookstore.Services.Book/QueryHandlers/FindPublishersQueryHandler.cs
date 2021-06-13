@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Bookstore.Domains.Book.Models;
 using Bookstore.Domains.Book.Queries;
@@ -26,9 +27,9 @@ namespace Bookstore.Services.Book.QueryHandlers
             {
                 if (context.Message.PublisherId.HasValue)
                     result.Results = new List<Publisher>
-                        {await _publishers.FindPublisherById(context.Message.PublisherId.Value)};
+                        {await _publishers.Find(context.Message.PublisherId.Value)};
                 else
-                    result.Results = await _publishers.FindAllPublishers();
+                    result.Results = (await _publishers.FindAll()).ToList();
                 result.Success = true;
             }
             catch (Exception ex)

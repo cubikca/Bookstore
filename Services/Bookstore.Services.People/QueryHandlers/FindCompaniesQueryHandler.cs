@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,28 +14,28 @@ namespace Bookstore.Services.People.QueryHandlers
 {
     public class FindCompaniesQueryHandler : IConsumer<FindCompaniesQuery>
     {
-        private readonly ICompanyRepository _companies;
+        private readonly IOrganizationRepository _organizations;
 
-        public FindCompaniesQueryHandler(ICompanyRepository companies)
+        public FindCompaniesQueryHandler(IOrganizationRepository organizations)
         {
-            _companies = companies;
+            _organizations = organizations;
         }
 
         public async Task Consume(ConsumeContext<FindCompaniesQuery> context)
         {
-            var result = new FindCompaniesQueryResult { Results = new List<Company>() } ;
+            var result = new FindCompaniesQueryResult { Results = new List<Organization>() } ;
             try
             {
                 if (context.Message.CompanyId.HasValue)
                 {
-                    var company = await _companies.FindCompanyById(context.Message.CompanyId.Value);
+                    var company = await _organizations.Find(context.Message.CompanyId.Value);
                     if (company != null)
                         result.Results.Add(company);
                 }
                 else
                 {
-                    var companies = await _companies.FindAllCompanies();
-                    result.Results = companies;
+                    var companies = await _organizations.FindAll();
+                    result.Results = companies.ToList();
                 }
             }
             catch (Exception ex)

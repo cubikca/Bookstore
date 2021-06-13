@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
-    public class Country : ISerializable, IEquatable<Country>
+    public class Country : IDomainObject, IEquatable<Country>
     {
         public string Name { get; set; }
         public string Abbreviation { get; set; }
@@ -36,5 +36,11 @@ namespace Bookstore.Domains.People.Models
         {
             return HashCode.Combine(Name, Abbreviation);
         }
+
+        public Guid Id { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime Created { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime Updated { get; set; }
     }
 }
