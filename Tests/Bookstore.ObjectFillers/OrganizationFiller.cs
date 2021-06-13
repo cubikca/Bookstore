@@ -17,7 +17,7 @@ namespace Bookstore.ObjectFillers
                 .OnProperty(c => c.Locations).Use(new Collectionizer<Location, RandomLocation>(1, 3));
         }
         
-        public Organization FillCompany()
+        public Organization FillOrganization()
         {
             return _filler.Create();
         }

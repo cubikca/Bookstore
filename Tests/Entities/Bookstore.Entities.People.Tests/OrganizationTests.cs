@@ -60,13 +60,13 @@ namespace Bookstore.Entities.People.Tests
         [Test]
         public async Task TestSave()
         {
-            var organization = _organizationFiller.FillCompany();
+            var organization = _organizationFiller.FillOrganization();
             var organizations = _services.GetRequiredService<IOrganizationRepository>();
             var saved = await organizations.Save(organization);
             Assert.AreNotSame(organization, saved);
             Assert.AreEqual(organization.Id, saved.Id);
             Assert.AreEqual(organization, saved);
-            organization = _organizationFiller.FillCompany();
+            organization = _organizationFiller.FillOrganization();
             organization.Id = saved.Id;
             var updated = await organizations.Save(organization);
             Assert.AreNotSame(organization, updated);
@@ -77,7 +77,7 @@ namespace Bookstore.Entities.People.Tests
         [Test]
         public async Task TestFind()
         {
-            var organization = _organizationFiller.FillCompany();
+            var organization = _organizationFiller.FillOrganization();
             var organizations = _services.GetRequiredService<IOrganizationRepository>();
             organization = await organizations.Save(organization);
             var found = await organizations.Find(organization.Id);
@@ -92,7 +92,7 @@ namespace Bookstore.Entities.People.Tests
         [Test]
         public async Task TestRemove()
         {
-            var organization = _organizationFiller.FillCompany();
+            var organization = _organizationFiller.FillOrganization();
             var organizations = _services.GetRequiredService<IOrganizationRepository>();
             organization = await organizations.Save(organization);
             var removed = await organizations.Remove(organization.Id);

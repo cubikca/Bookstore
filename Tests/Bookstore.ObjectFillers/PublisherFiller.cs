@@ -13,7 +13,7 @@ namespace Bookstore.ObjectFillers
             var filler = new Filler<Publisher>();
             _publisherSetup = filler.Setup(true)
                 .OnProperty(p => p.Id).Use(Guid.NewGuid)
-                .OnProperty(p => p.Profile).Use(() => new OrganizationFiller().FillCompany())
+                .OnProperty(p => p.Profile).Use(() => new OrganizationFiller().FillOrganization())
                 .Result;
         }
 

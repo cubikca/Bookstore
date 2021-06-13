@@ -65,7 +65,7 @@ namespace Bookstore.Entities.People.Tests
         public async Task TestSave()
         {
             Subject subject1 = _personFiller.FillPerson();
-            Subject subject2 = _organizationFiller.FillCompany();
+            Subject subject2 = _organizationFiller.FillOrganization();
             var subjects = _services.GetRequiredService<ISubjectRepository>();
             var saved1 = await subjects.Save(subject1);
             var saved2 = await subjects.Save(subject2);
@@ -77,7 +77,7 @@ namespace Bookstore.Entities.People.Tests
             // you can probably do some things like changing a Person to a Company that aren't
             // currently supported. This test suite doesn't try to catch those scenarios.
             subject1 = _personFiller.FillPerson();
-            subject2 = _organizationFiller.FillCompany();
+            subject2 = _organizationFiller.FillOrganization();
             subject1.Id = saved1.Id;
             subject2.Id = saved2.Id;
             var updated1 = await subjects.Save(subject1);
@@ -93,7 +93,7 @@ namespace Bookstore.Entities.People.Tests
         public async Task TestFind()
         {
             Subject subject1 = _personFiller.FillPerson();
-            Subject subject2 = _organizationFiller.FillCompany();
+            Subject subject2 = _organizationFiller.FillOrganization();
             var subjects = _services.GetRequiredService<ISubjectRepository>();
             subject1 = await subjects.Save(subject1);
             subject2 = await subjects.Save(subject2);
@@ -113,7 +113,7 @@ namespace Bookstore.Entities.People.Tests
         [Test]
         public async Task TestRemove()
         {
-            Subject subject1 = _organizationFiller.FillCompany();
+            Subject subject1 = _organizationFiller.FillOrganization();
             Subject subject2 = _personFiller.FillPerson();
             var subjects = _services.GetRequiredService<ISubjectRepository>();
             subject1 = await subjects.Save(subject1);
