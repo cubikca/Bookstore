@@ -29,7 +29,8 @@ namespace Bookstore.Services.Workers.People
             services.AddDbContextFactory<PeopleContext>(opt =>
             {
                 var connectionString = config.GetConnectionString("PeopleContext");
-                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                opt.UseLazyLoadingProxies();
+                opt.UseSqlServer(connectionString);
             });
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IPersonRepository, PersonRepository>();

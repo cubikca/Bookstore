@@ -26,9 +26,10 @@ namespace Bookstore.Entities.People.Tests
             services.AddDbContextFactory<PeopleContext>(options =>
             {
                 var connectionString = config.GetConnectionString("PeopleContext");
+                options.UseLazyLoadingProxies();
                 options.EnableDetailedErrors();
                 options.EnableSensitiveDataLogging();
-                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                options.UseSqlServer(connectionString);
             });
             var mapperConfig = new MapperConfiguration(cfg =>
             {

@@ -13,7 +13,7 @@ namespace Bookstore.Entities.People.Repositories
 {
     public class CountryRepository : RepositoryBase<Country, Models.Country>, ICountryRepository
     {
-        public CountryRepository(IDbContextFactory<PeopleContext> dbFactory, IMapper mapper, ILogger<RepositoryBase<Country, Models.Country>> logger) : base(dbFactory, mapper, logger)
+        public CountryRepository(IDbContextFactory<PeopleContext> dbFactory, IMapper mapper, ILogger<CountryRepository> logger) : base(dbFactory, mapper, logger)
         {
         }
 

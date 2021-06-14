@@ -11,9 +11,8 @@ namespace Bookstore.Entities.People
         public PeopleContext CreateDbContext(string[] args)
         {
             var ob = new DbContextOptionsBuilder<PeopleContext>();
-            var connectionString = "server=mysql;user=brian;password=development;database=PeopleDevelopment";
-            var serverVersion = new MySqlServerVersion(new Version(8, 0, 25));
-            ob.UseMySql(connectionString, serverVersion);
+            var connectionString = "Data Source=sqlserver;User Id=brian;Password=development;Initial Catalog=PeopleDevelopment";
+            ob.UseSqlServer(connectionString);
             return new PeopleContext(ob.Options);
         }
     }

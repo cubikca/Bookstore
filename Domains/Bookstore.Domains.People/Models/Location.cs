@@ -10,9 +10,9 @@ namespace Bookstore.Domains.People.Models
     {
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
         public Guid? CompanyId { get; set; }
         public bool Primary { get; set; }
         public Address MailingAddress { get; set; }

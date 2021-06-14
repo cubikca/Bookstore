@@ -20,7 +20,7 @@ namespace Bookstore.ObjectFillers
         public Publisher FillPublisher()
         {
             var filler = new Filler<Publisher>();
-            filler.Setup(_publisherSetup);
+            filler.Setup(_publisherSetup, true);
             return filler.Create();
         }
     }

@@ -11,16 +11,16 @@ namespace Bookstore.Entities.Book.Models
         public Guid Id { get; set; }
 
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
         public bool Deleted { get; set; }
         public string ISBN { get; set; }
         public string Title { get; set; }
         public string Subtitle { get; set; }
         public virtual IList<Author> Authors { get; set; }
         public int Edition { get; set; }
-        public DateTime PublishDate { get; set; }
+        public DateTimeOffset PublishDate { get; set; }
         public Guid? PublisherId { get; set; }
         [ForeignKey("PublisherId")]
         public virtual Publisher Publisher { get; set; }

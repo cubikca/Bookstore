@@ -8,8 +8,8 @@ namespace Bookstore.Entities.Book
         public BookContext CreateDbContext(string[] args)
         {
             var ob = new DbContextOptionsBuilder<BookContext>();
-            var connectionString = "server=mysql;user=brian;password=development;database=BooksDevelopment";
-            ob.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+            var connectionString = "Data Source=sqlserver;User Id=brian;Password=development;Initial Catalog=BooksDevelopment";
+            ob.UseSqlServer(connectionString);
             return new BookContext(ob.Options);
         }
     }

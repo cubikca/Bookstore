@@ -27,9 +27,10 @@ namespace Bookstore.Entities.People.Tests
             services.AddLogging(cfg => cfg.AddConsole());
             services.AddDbContextFactory<PeopleContext>(options =>
             {
+                options.UseLazyLoadingProxies();
                 options.EnableDetailedErrors();
                 options.EnableSensitiveDataLogging();
-                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                options.UseSqlServer(connectionString);
             });
             services.AddScoped<ICountryRepository, CountryRepository>();
             services.AddScoped<IProvinceRepository, ProvinceRepository>();

@@ -72,7 +72,6 @@ namespace Bookstore.Entities.People.Repositories
             {
                 await using var db = DbFactory.CreateDbContext();
                 var entities = await db.Provinces
-                    .Include(p => p.Country)
                     .Where(p => !p.Deleted)
                     .ToListAsync();
                 return Mapper.Map<List<Province>>(entities);
@@ -91,7 +90,6 @@ namespace Bookstore.Entities.People.Repositories
             {
                 await using var db = DbFactory.CreateDbContext();
                 var provinces = await db.Provinces
-                    .Include(p => p.Country)
                     .Where(p => p.CountryId == countryId)
                     .ToListAsync();
                 var result = Mapper.Map<List<Province>>(provinces);

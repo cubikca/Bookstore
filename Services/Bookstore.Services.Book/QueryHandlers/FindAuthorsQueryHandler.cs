@@ -8,6 +8,7 @@ using Bookstore.Domains.Book.QueryResults;
 using Bookstore.Domains.Book.Repositories;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Queries;
+using Bookstore.Domains.People.QueryResults;
 using Bookstore.Entities.Book;
 using MassTransit;
 using MassTransit.MultiBus;
@@ -17,12 +18,12 @@ namespace Bookstore.Services.Book.QueryHandlers
     public class FindAuthorsQueryHandler : IConsumer<FindAuthorsQuery>
     {
         private readonly IAuthorRepository _authors;
-        private readonly IPeopleBus _peopleBus;
+        private readonly IRequestClient<FindSubjectsQuery> _findSubjectsQuery;
 
         public FindAuthorsQueryHandler(IAuthorRepository authors, IPeopleBus peopleBus)
         {
             _authors = authors;
-            _peopleBus = peopleBus;
+            _findSubjectsQuery = peopleBus.CreateRequestClient<FindSubjectsQuery>();
         }
         
         public async Task Consume(ConsumeContext<FindAuthorsQuery> context)
@@ -31,9 +32,25 @@ namespace Bookstore.Services.Book.QueryHandlers
             try
             {
                 if (context.Message.AuthorId.HasValue)
-                    result.Results = new List<Author> {await _authors.Find(context.Message.AuthorId.Value)};
+                {
+                    var author = await _authors.Find(context.Message.AuthorId.Value);
+                    if (author != null)
+                        result.Results = new List<Author> {await _authors.Find(context.Message.AuthorId.Value)};
+                    else
+                        result.Results = Enumerable.Empty<Author>().ToList();
+                }
                 else
                     result.Results = (await _authors.FindAll()).ToList();
+                var tasks = result.Results.Select(async r =>
+                {
+                    if (r != null && r.ProfileId != null)
+                    {
+                        var response = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
+                            new FindSubjectsQuery {SubjectId = r.ProfileId});
+                        r.Profile = response.Message.Results.SingleOrDefault();
+                    }
+                });
+                await Task.WhenAll(tasks);
                 result.Success = true;
             }
             catch (Exception ex)

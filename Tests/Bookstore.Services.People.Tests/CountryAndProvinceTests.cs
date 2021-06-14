@@ -14,7 +14,6 @@ using Bookstore.Domains.People.Repositories;
 using Bookstore.ObjectFillers;
 using GreenPipes;
 using MassTransit;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

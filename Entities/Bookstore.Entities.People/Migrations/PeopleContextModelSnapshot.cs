@@ -3,6 +3,7 @@ using System;
 using Bookstore.Entities.People;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Bookstore.Entities.People.Migrations
@@ -14,47 +15,48 @@ namespace Bookstore.Entities.People.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.5");
+                .HasAnnotation("Relational:MaxIdentifierLength", 128)
+                .HasAnnotation("ProductVersion", "5.0.7")
+                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("Bookstore.Entities.People.Models.Address", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("City")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("CountryId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("PostalCode")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("ProvinceId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Street1")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Street2")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -69,28 +71,28 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Abbreviation")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -101,31 +103,31 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Email")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Primary")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Verified")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -136,34 +138,34 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<Guid?>("MailingAddressId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("OrganizationId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("Primary")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<Guid?>("StreetAddressId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -179,10 +181,10 @@ namespace Bookstore.Entities.People.Migrations
             modelBuilder.Entity("Bookstore.Entities.People.Models.LocationContact", b =>
                 {
                     b.Property<Guid>("LocationId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ContactId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("LocationId", "ContactId");
 
@@ -195,37 +197,37 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Facebook")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Instagram")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LinkedIn")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Twitter")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Website")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -236,25 +238,25 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("OrganizationName")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -265,49 +267,49 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<Guid?>("EmailAddressId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("FamilyName")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Initial")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("MailingAddressId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("OnlinePresenceId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("PhoneNumberId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("StreetAddressId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Suffix")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -328,13 +330,13 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("GivenName")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PersonId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -347,13 +349,13 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("KnownAsName")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PersonId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -366,31 +368,31 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AreaCode")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Extension")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -401,31 +403,31 @@ namespace Bookstore.Entities.People.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Abbreviation")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("CountryId")
-                        .HasColumnType("char(36)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                    b.Property<DateTimeOffset>("Updated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

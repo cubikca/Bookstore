@@ -30,9 +30,9 @@ namespace Bookstore.Services.Book.Worker
         {
             services.AddDbContextFactory<BookContext>(opt =>
             {
-                opt.UseLazyLoadingProxies();
                 var connectionString = config.GetConnectionString("BookContext");
-                opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                opt.UseLazyLoadingProxies();
+                opt.UseSqlServer(connectionString);
             });
             services.AddScoped<IAuthorRepository, AuthorRepository>();
             services.AddScoped<IBookRepository, BookRepository>();
@@ -56,9 +56,6 @@ namespace Bookstore.Services.Book.Worker
 
             services.AddMassTransit<IPeopleBus>(cfg =>
             {
-                cfg.AddRequestClient<SaveSubjectCommand>();
-                cfg.AddRequestClient<RemoveSubjectCommand>();
-                cfg.AddRequestClient<FindSubjectsQuery>();
                 var peopleServiceConnection = config.GetConnectionString("PeopleService");
                 cfg.UsingRabbitMq((_, rmq) =>
                 {

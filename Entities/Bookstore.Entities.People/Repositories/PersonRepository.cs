@@ -102,7 +102,7 @@ namespace Bookstore.Entities.People.Repositories
             await db.SaveChangesAsync();
         }
 
-        private async Task SaveGivenNames(PeopleContext db, Models.Person entity, IList<string> names)
+        private void SaveGivenNames(PeopleContext db, Models.Person entity, IList<string> names)
         {
             if (entity.GivenNames == null) entity.GivenNames = new List<PersonGivenName>();
             for (var i = 0; i < names.Count; i++)
@@ -122,7 +122,7 @@ namespace Bookstore.Entities.People.Repositories
                         GivenName = names[i]
                     };
                     entity.GivenNames.Add(gn);
-                    await db.PersonGivenNames.AddAsync(gn);
+                    db.PersonGivenNames.Add(gn);
                 }
             }
             if (entity.GivenNames.Count > names.Count)
@@ -130,10 +130,10 @@ namespace Bookstore.Entities.People.Repositories
                 for (var i = names.Count; i < entity.GivenNames.Count; i++)
                     db.PersonGivenNames.Remove(entity.GivenNames[i]);
             }
-            await db.SaveChangesAsync();
+            db.SaveChanges();
         }
 
-        private async Task SaveKnownAsNames(PeopleContext db, Models.Person entity, IList<string> names)
+        private void SaveKnownAsNames(PeopleContext db, Models.Person entity, IList<string> names)
         {
              if (entity.KnownAs == null) entity.KnownAs = new List<PersonKnownAsName>();
              for (var i = 0; i < names.Count; i++)
@@ -153,7 +153,7 @@ namespace Bookstore.Entities.People.Repositories
                          KnownAsName = names[i]
                      };
                      entity.KnownAs.Add(aka);
-                     await db.PersonKnownAsNames.AddAsync(aka);
+                     db.PersonKnownAsNames.Add(aka);
                  }
              }
              if (entity.KnownAs.Count > names.Count)
@@ -161,7 +161,7 @@ namespace Bookstore.Entities.People.Repositories
                  for (var i = names.Count; i < entity.KnownAs.Count; i++)
                      db.PersonKnownAsNames.Remove(entity.KnownAs[i]);
              }
-             await db.SaveChangesAsync();           
+             db.SaveChanges();           
         }
 
         public override async Task<Person> Save(Person model)
@@ -172,9 +172,9 @@ namespace Bookstore.Entities.People.Repositories
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var person = await base.Save(model);
-                var entity = await PersonQuery(db).SingleOrDefaultAsync(p => p.Id == person.Id && !p.Deleted);
-                await SaveGivenNames(db, entity, model.GivenNames);
-                await SaveKnownAsNames(db, entity, model.KnownAs);
+                var entity = await db.People.SingleOrDefaultAsync(p => p.Id == person.Id && !p.Deleted);
+                SaveGivenNames(db, entity, model.GivenNames);
+                SaveKnownAsNames(db, entity, model.KnownAs);
                 if (model.StreetAddress != null)
                 {
                     if (entity.StreetAddress != null)
@@ -205,8 +205,7 @@ namespace Bookstore.Entities.People.Repositories
                     await SaveOnlinePresence(entity, model.OnlinePresence);
                 else
                     await RemoveOnlinePresence(entity);
-                var result = Mapper.Map<Person>(await PersonQuery(db)
-                    .SingleOrDefaultAsync(p => p.Id == person.Id && !p.Deleted));
+                var result = Mapper.Map<Person>(await db.People.SingleOrDefaultAsync(p => p.Id == person.Id && !p.Deleted));
                 scope.Complete();
                 return result;
             }
@@ -218,28 +217,12 @@ namespace Bookstore.Entities.People.Repositories
             }
         }
 
-        private static IQueryable<Models.Person> PersonQuery(PeopleContext db)
-        {
-            return db.People
-                .Include(p => p.GivenNames)
-                .Include(p => p.KnownAs)
-                .Include(p => p.MailingAddress).ThenInclude(a => a.Country)
-                .Include(p => p.MailingAddress).ThenInclude(a => a.Province).ThenInclude(p => p.Country)
-                .Include(p => p.StreetAddress).ThenInclude(a => a.Country)
-                .Include(p => p.StreetAddress).ThenInclude(a => a.Province).ThenInclude(p => p.Country)
-                .Include(p => p.EmailAddress)
-                .Include(p => p.PhoneNumber)
-                .Include(p => p.OnlinePresence)
-                .AsQueryable();
-        }
-
         public override async Task<Person> Find(Guid id)
         {
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await PersonQuery(db)
-                    .SingleOrDefaultAsync(p => p.Id == id && !p.Deleted);
+                var entity = await db.People.SingleOrDefaultAsync(p => p.Id == id && !p.Deleted);
                 var person = Mapper.Map<Person>(entity);
                 return person;
             }
@@ -256,7 +239,7 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entities = await PersonQuery(db)
+                var entities = await db.People
                     .Where(p => !p.Deleted)
                     .ToListAsync();
                 var people = Mapper.Map<List<Person>>(entities);
@@ -277,8 +260,7 @@ namespace Bookstore.Entities.People.Repositories
                 using var scope = new TransactionScope(TransactionScopeOption.Required,
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await PersonQuery(db)
-                    .SingleOrDefaultAsync(p => p.Id == id && !p.Deleted);
+                var entity = await db.People.SingleOrDefaultAsync(p => p.Id == id && !p.Deleted);
                 if (entity == null) return false;
                 if (entity.GivenNames != null)
                 {

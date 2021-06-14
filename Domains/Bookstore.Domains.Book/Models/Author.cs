@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 using Bookstore.Domains.People.Models;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.Book.Models
 {
@@ -8,17 +9,23 @@ namespace Bookstore.Domains.Book.Models
     {
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
+        
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Objects)]
         public Subject Profile { get; set; }
+        // we don't usually put foreign keys in the model, but this one refers to another service
+        public Guid? ProfileId { get; set; }
         public decimal Salary { get; set; }
 
         public bool Equals(Author other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Profile?.Id == other.Profile?.Id && Salary == other.Salary;
+            var profilesEqual = Profile == null && other.Profile == null ||
+                                Profile != null && Profile.Equals(other.Profile);
+            return profilesEqual && Salary == other.Salary;
         }
 
         public override bool Equals(object obj)

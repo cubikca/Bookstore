@@ -21,7 +21,7 @@ namespace Bookstore.ObjectFillers
         public Author FillAuthor()
         {
             var filler = new Filler<Author>();
-            filler.Setup(_authorSetup);
+            filler.Setup(_authorSetup, true);
             return filler.Create();
         }
     }

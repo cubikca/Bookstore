@@ -7,7 +7,6 @@ using AutoMapper;
 using Bookstore.Domains.People.Repositories;
 using Bookstore.Entities.People.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 using Location = Bookstore.Domains.People.Models.Location;
 using Person = Bookstore.Domains.People.Models.Person;
@@ -16,22 +15,6 @@ namespace Bookstore.Entities.People.Repositories
 {
     public class LocationRepository : RepositoryBase<Location, Models.Location>, ILocationRepository
     {
-        static IQueryable<Models.Location> LocationQuery(PeopleContext db) => db.Locations
-            .Include(l => l.StreetAddress).ThenInclude(a => a.Country)
-            .Include(l => l.StreetAddress).ThenInclude(a => a.Province).ThenInclude(p => p.Country)
-            .Include(l => l.MailingAddress).ThenInclude(a => a.Country)
-            .Include(l => l.MailingAddress).ThenInclude(a => a.Province).ThenInclude(p => p.Country)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.GivenNames)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.KnownAs)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.MailingAddress).ThenInclude(a => a.Country)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.MailingAddress).ThenInclude(a => a.Province).ThenInclude(p => p.Country)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.StreetAddress).ThenInclude(a => a.Country)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.StreetAddress).ThenInclude(a => a.Province).ThenInclude(p => p.Country)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.EmailAddress)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.PhoneNumber)
-            .Include(l => l.Contacts).ThenInclude(c => c.Contact).ThenInclude(c => c.OnlinePresence)
-            .AsQueryable();
-        
         private readonly IPersonRepository _people;
         private readonly IAddressRepository _addresses;
         
@@ -80,8 +63,7 @@ namespace Bookstore.Entities.People.Repositories
                 new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
             await using var db = DbFactory.CreateDbContext();
             var location = await base.Save(model);
-            var entity = await LocationQuery(db)
-                .SingleOrDefaultAsync(l => l.Id == location.Id && !l.Deleted);
+            var entity = await db.Locations.SingleOrDefaultAsync(l => l.Id == location.Id && !l.Deleted);
             if (model.StreetAddress != null)
             {
                 var address = await _addresses.Save(model.StreetAddress);
@@ -112,7 +94,7 @@ namespace Bookstore.Entities.People.Repositories
             }
             await SaveContacts(db, entity, model.Contacts);
             await db.SaveChangesAsync();
-            var result = Mapper.Map<Location>(await LocationQuery(db).SingleAsync(l => l.Id == entity.Id));
+            var result = Mapper.Map<Location>(await db.Locations.SingleAsync(l => l.Id == entity.Id));
             scope.Complete();
             return result;
         }
@@ -122,7 +104,7 @@ namespace Bookstore.Entities.People.Repositories
             using var scope =
                 new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
             await using var db = DbFactory.CreateDbContext();
-            var entity = await LocationQuery(db).SingleOrDefaultAsync(l => l.Id == id && !l.Deleted);
+            var entity = await db.Locations.SingleOrDefaultAsync(l => l.Id == id && !l.Deleted);
             if (entity == null) return false;
             if (entity.Contacts != null)
                 await RemoveContacts(db, entity);
@@ -140,7 +122,7 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await LocationQuery(db)
+                var entity = await db.Locations
                     .SingleOrDefaultAsync(l => l.Id == id && !l.Deleted);
                 var location = Mapper.Map<Location>(entity);
                 return location;
@@ -157,7 +139,7 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entities = await LocationQuery(db)
+                var entities = await db.Locations
                     .Where(l => !l.Deleted)
                     .ToListAsync();
                 var locations = Mapper.Map<List<Location>>(entities);

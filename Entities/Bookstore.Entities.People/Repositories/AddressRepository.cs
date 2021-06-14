@@ -14,12 +14,6 @@ namespace Bookstore.Entities.People.Repositories
 {
     public class AddressRepository : RepositoryBase<Address, Models.Address>, IAddressRepository
     {
-        static IQueryable<Models.Address> AddressQuery(PeopleContext db) =>
-            db.Addresses
-                .Include(a => a.Country)
-                .Include(a => a.Province).ThenInclude(p => p.Country)
-                .AsQueryable();
-        
         private readonly ICountryRepository _countries;
         private readonly IProvinceRepository _provinces;
         
@@ -37,7 +31,7 @@ namespace Bookstore.Entities.People.Repositories
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var address = await base.Save(model);
-                var entity = await AddressQuery(db).SingleOrDefaultAsync(a => a.Id == address.Id && !a.Deleted);
+                var entity = await db.Addresses.SingleOrDefaultAsync(a => a.Id == address.Id && !a.Deleted);
                 if (entity == null || entity.Deleted) return null;
                 if (model.Country != null)
                 {
@@ -65,7 +59,7 @@ namespace Bookstore.Entities.People.Repositories
                     entity.CountryId = country.Id;
                 }
                 await db.SaveChangesAsync();
-                var result = Mapper.Map<Address>(await AddressQuery(db).SingleAsync(a => a.Id == model.Id));
+                var result = Mapper.Map<Address>(await db.Addresses.SingleAsync(a => a.Id == model.Id));
                 scope.Complete();
                 return result;
             }
@@ -82,7 +76,7 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entity = await AddressQuery(db).SingleOrDefaultAsync(a => a.Id == id && !a.Deleted);
+                var entity = await db.Addresses.SingleOrDefaultAsync(a => a.Id == id && !a.Deleted);
                 return Mapper.Map<Address>(entity);
             }
             catch (Exception ex)
@@ -98,7 +92,7 @@ namespace Bookstore.Entities.People.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                var entities = await AddressQuery(db).Where(a => !a.Deleted).ToListAsync();
+                var entities = await db.Addresses.Where(a => !a.Deleted).ToListAsync();
                 return Mapper.Map<List<Address>>(entities);
             }
             catch (Exception ex)

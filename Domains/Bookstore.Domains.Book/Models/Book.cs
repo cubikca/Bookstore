@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using Bookstore.Domains.People.Models;
 
@@ -9,16 +10,17 @@ namespace Bookstore.Domains.Book.Models
     {
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
         public string ISBN { get; set; }
         public string Title { get; set; }
         public string Subtitle { get; set; }
         public IList<Author> Authors { get; set; }
         public int Edition { get; set; }
-        public DateTime PublishDate { get; set; }
+        public DateTimeOffset PublishDate { get; set; }
         public Publisher Publisher { get; set; }
+        public Guid? PublisherId { get; set; }
         public decimal Cost { get; set; }
         public decimal Price { get; set; }
 
@@ -26,7 +28,9 @@ namespace Bookstore.Domains.Book.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return ISBN == other.ISBN && Title == other.Title && Subtitle == other.Subtitle && Edition == other.Edition && PublishDate.Equals(other.PublishDate) && Cost == other.Cost && Price == other.Price;
+            return ISBN == other.ISBN && Title == other.Title && Subtitle == other.Subtitle && Edition == other.Edition && PublishDate.Equals(other.PublishDate) && Cost == other.Cost && Price == other.Price
+                && Authors.All(other.Authors.Contains) && other.Authors.All(Authors.Contains)
+                && Publisher.Equals(other.Publisher);
         }
 
         public override bool Equals(object obj)
