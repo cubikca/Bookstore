@@ -8,9 +8,9 @@ namespace Bookstore.Domains.People.Models
     {
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
         public string Website { get; set; }
         public string Facebook { get; set; }
         public string Twitter { get; set; }
@@ -31,7 +31,7 @@ namespace Bookstore.Domains.People.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && Website == other.Website && Facebook == other.Facebook && Twitter == other.Twitter && Instagram == other.Instagram && LinkedIn == other.LinkedIn;
+            return Website == other.Website && Facebook == other.Facebook && Twitter == other.Twitter && Instagram == other.Instagram && LinkedIn == other.LinkedIn;
         }
 
         public override bool Equals(object obj)

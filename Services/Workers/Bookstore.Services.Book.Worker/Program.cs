@@ -1,7 +1,15 @@
 using System;
+using System.IO;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using AutoMapper;
+using Azure;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Storage.Blobs;
+using Bookstore.Domains.Book;
 using Bookstore.Domains.Book.Commands;
+using Bookstore.Domains.Book.QueryResults;
 using Bookstore.Domains.Book.Repositories;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Queries;
@@ -9,8 +17,14 @@ using Bookstore.Entities.Book;
 using Bookstore.Entities.Book.AutoMapper;
 using Bookstore.Entities.Book.Repositories;
 using Bookstore.Services.Book.CommandHandlers;
+using Enchilada.Azure.BlobStorage;
+using Enchilada.Filesystem;
 using MassTransit;
+using MassTransit.Azure.ServiceBus.Core.Configurators;
+using MassTransit.MessageData;
+using MassTransit.MessageData.Enchilada;
 using MassTransit.MultiBus;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,10 +42,18 @@ namespace Bookstore.Services.Book.Worker
 
         private static void BuildServiceContainer(IServiceCollection services, IConfiguration config)
         {
+            var azureConfig = config.GetSection("Azure");
+            var storageConfig = config.GetSection("AzureStorage");
+            var keyVaultConfig = config.GetSection("KeyVault");
+            var certificate =
+                new X509Certificate2(azureConfig["CertificatePath"], azureConfig["CertificatePassphrase"]);
+            var credential = new ClientCertificateCredential(azureConfig["TenantId"], azureConfig["ApplicationId"], certificate);
+            var secretClient = new SecretClient(new Uri(keyVaultConfig["Url"]), credential);
             services.AddDbContextFactory<BookContext>(opt =>
             {
                 opt.UseLazyLoadingProxies();
-                var connectionString = config.GetConnectionString("BookContext");
+                var connectionStringSecret = config.GetConnectionString("BookContext");
+                var connectionString = secretClient.GetSecret(connectionStringSecret).Value.Value;
                 opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             services.AddScoped<IAuthorRepository, AuthorRepository>();
@@ -42,29 +64,56 @@ namespace Bookstore.Services.Book.Worker
                 cfg.AddProfile<DefaultProfile>();
             });
             services.AddSingleton(mapperConfig.CreateMapper());
+            MessageDataDefaults.TimeToLive = TimeSpan.FromDays(2);
+            var blobServiceClient = new BlobServiceClient(new Uri($"https://{storageConfig["AccountName"]}.blob.core.windows.net/"), new ManagedIdentityCredential());
+            var messageDataRepository = blobServiceClient.CreateMessageDataRepository(storageConfig["MessageDataContainer"]);
+            services.AddSingleton<IMessageDataRepository>(messageDataRepository);
             services.AddMassTransit(cfg =>
             {
-                var bookServiceConnection = config.GetConnectionString("BookService");
                 cfg.AddConsumers(Assembly.GetAssembly(typeof(SaveBookCommandHandler)));
-                cfg.UsingRabbitMq((ctx, rmq) =>
+                cfg.UsingAzureServiceBus((ctx, sb) =>
                 {
-                    rmq.Host(new Uri(bookServiceConnection));
-                    rmq.UseBsonSerializer();
-                    rmq.ConfigureEndpoints(ctx);
+                    sb.UseMessageData(messageDataRepository);
+                    var booksConfig = config.GetSection("BooksService");
+                    var booksConnection = $"sb://{booksConfig["ServiceBusNamespace"]}.servicebus.windows.net/";
+                    var secretName = booksConfig["AccessKeySecret"];
+                    var sharedAccessKey = secretClient.GetSecret(secretName).Value.Value;
+                    var hostSettings = new HostSettings
+                    {
+                        ServiceUri = new Uri(booksConnection),
+                        TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(booksConfig["AccessKeyName"],
+                            sharedAccessKey)
+                    };
+                    sb.Host(hostSettings);
+                    sb.ReceiveEndpoint(booksConfig["InputQueue"], ep =>
+                    {
+                        ep.ConfigureConsumers(ctx);
+                    }); 
+                    sb.Host(hostSettings);
+                    sb.UseJsonSerializer();
                 });
             });
-
             services.AddMassTransit<IPeopleBus>(cfg =>
             {
                 cfg.AddRequestClient<SaveSubjectCommand>();
                 cfg.AddRequestClient<RemoveSubjectCommand>();
                 cfg.AddRequestClient<FindSubjectsQuery>();
-                var peopleServiceConnection = config.GetConnectionString("PeopleService");
-                cfg.UsingRabbitMq((_, rmq) =>
+                cfg.UsingAzureServiceBus((_, sb) =>
                 {
-                    rmq.Host(new Uri(peopleServiceConnection));
-                    rmq.UseBsonSerializer();
-                }); 
+                    sb.UseMessageData(messageDataRepository);
+                    var peopleConfig = config.GetSection("PeopleService");
+                    var peopleConnection = $"sb://{peopleConfig["ServiceBusNamespace"]}.servicebus.windows.net/";
+                    var secretName = peopleConfig["AccessKeySecret"];
+                    var sharedAccessKey = secretClient.GetSecret(secretName).Value.Value;
+                    var hostSettings = new HostSettings
+                    {
+                        ServiceUri = new Uri(peopleConnection),
+                        TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(
+                            peopleConfig["AccessKeyName"], sharedAccessKey)
+                    };
+                    sb.Host(hostSettings);
+                    sb.UseBsonSerializer();
+                });
             });
             services.AddMassTransitHostedService();
         }

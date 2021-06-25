@@ -8,9 +8,9 @@ namespace Bookstore.Entities.Book.Models
         [Key]
         public Guid Id { get; set; } 
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
         public bool Deleted { get; set; }
     }
 }

@@ -15,13 +15,13 @@ namespace Bookstore.Domains.People.Models
     {
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
-        public virtual string Name { get; set; }
-        public virtual string FullName { get; set; }
-        public virtual Address StreetAddress { get; set; }
-        public virtual Address MailingAddress { get; set; }
+        public DateTimeOffset Updated { get; set; }
+        public abstract string Name { get; }
+        public abstract string FullName { get; }
+        public abstract Address StreetAddress { get; set; }
+        public abstract Address MailingAddress { get; set; }
         public EmailAddress EmailAddress { get; set; }
         public PhoneNumber PhoneNumber { get; set; }
         public OnlinePresence OnlinePresence { get; set; }

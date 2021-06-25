@@ -24,6 +24,12 @@ namespace Bookstore.Domains.People.Models
             {
                 return Locations?.FirstOrDefault(l => l.Primary)?.MailingAddress;
             }
+            set
+            {
+                var location = Locations?.FirstOrDefault(l => l.Primary);
+                if (location != null)
+                    location.MailingAddress = value;
+            }
         }
 
         public override Address StreetAddress
@@ -31,6 +37,12 @@ namespace Bookstore.Domains.People.Models
             get
             {
                 return Locations?.FirstOrDefault(l => l.Primary)?.StreetAddress;
+            }
+            set
+            {
+                var location = Locations?.FirstOrDefault(l => l.Primary);
+                if (location != null)
+                    location.StreetAddress = value;
             }
         }
 

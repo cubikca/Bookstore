@@ -11,25 +11,20 @@ namespace Bookstore.Services.Book.Worker
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        private readonly IBusControl _busControl;
-        private readonly IDbContextFactory<BookContext> _dbFactory;
 
-        public Worker(IBusControl busControl, ILogger<Worker> logger, IDbContextFactory<BookContext> dbFactory)
+        public Worker(ILogger<Worker> logger)
         {
             _logger = logger;
-            _busControl = busControl;
-            _dbFactory = dbFactory;
         }
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var db = _dbFactory.CreateDbContext();
-            await db.Database.MigrateAsync(stoppingToken);
-            await _busControl.StartAsync(stoppingToken);
+            _logger.LogInformation("BookService starting...");
+            return Task.CompletedTask;
         }
 
         public override void Dispose()
         {
-            Task.Run(async () => await _busControl.StopAsync());
+            _logger.LogInformation("BookService stopping...");
         }
     }
 }

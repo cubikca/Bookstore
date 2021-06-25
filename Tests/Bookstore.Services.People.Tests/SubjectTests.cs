@@ -12,6 +12,8 @@ using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.ObjectFillers;
 using MassTransit;
+using MassTransit.Azure.ServiceBus.Core.Configurators;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,11 +40,17 @@ namespace Bookstore.Services.People.Tests
                 mt.AddRequestClient<SaveSubjectCommand>();
                 mt.AddRequestClient<FindSubjectsQuery>();
                 mt.AddRequestClient<RemoveSubjectCommand>();
-                mt.UsingRabbitMq((_, rmq) =>
+                mt.UsingAzureServiceBus((ctx, sb) =>
                 {
-                    var connectionString = config.GetConnectionString("PeopleService");
-                    rmq.Host(new Uri(connectionString));
-                    rmq.UseBsonSerializer();
+                    var peopleConfig = config.GetSection("PeopleService");
+                    var peopleConnection = $"sb://{peopleConfig["ServiceBusNamespace"]}.servicebus.windows.net/";
+                    var hostSettings = new HostSettings
+                    {
+                        ServiceUri = new Uri(peopleConnection),
+                        TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(peopleConfig["AccessKeyName"], peopleConfig["AccessKey"])
+                    };
+                    sb.Host(hostSettings);
+                    sb.UseBsonSerializer();
                 });
             });
        }

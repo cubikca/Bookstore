@@ -43,7 +43,6 @@ namespace Bookstore.Services.People.QueryHandlers
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

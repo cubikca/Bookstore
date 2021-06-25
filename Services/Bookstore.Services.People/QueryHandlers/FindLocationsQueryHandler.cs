@@ -38,7 +38,6 @@ namespace Bookstore.Services.People.QueryHandlers
                     $"Failed to retrieve Entit{(context.Message.LocationId.HasValue ? "y" : "ies")} of type Location";
                 _logger.LogError(ex, message);
                 result.Error = message;
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

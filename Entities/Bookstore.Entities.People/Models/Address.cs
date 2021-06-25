@@ -10,9 +10,9 @@ namespace Bookstore.Entities.People.Models
         public Guid? ProvinceId { get; set; }
         public Guid? CountryId { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
         public bool Deleted { get; set; }
         public string Street1 { get; set; }
         public string Street2 { get; set; }

@@ -17,10 +17,10 @@ namespace Bookstore.Entities.Book.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Created = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Created = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Updated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Updated = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     Deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     ProfileId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Salary = table.Column<decimal>(type: "decimal(65,30)", nullable: false)
@@ -38,10 +38,10 @@ namespace Bookstore.Entities.Book.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Created = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Created = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Updated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Updated = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     Deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     ProfileId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
                 },
@@ -58,10 +58,10 @@ namespace Bookstore.Entities.Book.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Created = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Created = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Updated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Updated = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     Deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     ISBN = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),

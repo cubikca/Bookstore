@@ -10,6 +10,8 @@ using Bookstore.Entities.People.AutoMapper;
 using Bookstore.Entities.People.Repositories;
 using Bookstore.Services.People.CommandHandlers;
 using MassTransit;
+using MassTransit.Azure.ServiceBus.Core.Configurators;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -47,12 +49,23 @@ namespace Bookstore.Services.Workers.People
             services.AddMassTransit(mt =>
             {
                 mt.AddConsumers(Assembly.GetAssembly(typeof(SaveSubjectCommandHandler)));
-                var peopleConnection = config.GetConnectionString("PeopleService");
-                mt.UsingRabbitMq((ctx, cfg) =>
+                var peopleConfig = config.GetSection("PeopleService");
+                var peopleConnection = $"sb://{peopleConfig["ServiceBusNamespace"]}.servicebus.windows.net/";
+                var hostSettings = new HostSettings
                 {
-                    cfg.Host(new Uri(peopleConnection));
-                    cfg.UseBsonSerializer();
-                    cfg.ConfigureEndpoints(ctx);
+                    ServiceUri = new Uri(peopleConnection),
+                    TokenProvider =
+                        TokenProvider.CreateSharedAccessSignatureTokenProvider(peopleConfig["AccessKeyName"],
+                            peopleConfig["AccessKey"])
+                };
+                mt.UsingAzureServiceBus((ctx, sb) =>
+                {
+                    sb.Host(hostSettings);
+                    sb.ReceiveEndpoint("people", rcv =>
+                    {
+                        rcv.ConfigureConsumers(ctx); 
+                    });
+                    sb.UseJsonSerializer();
                 });
             });
             services.AddMassTransitHostedService();

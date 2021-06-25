@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 using Bookstore.Domains.People.Models;
+using Newtonsoft.Json;
 
 namespace Bookstore.Domains.Book.Models
 {
@@ -8,10 +9,12 @@ namespace Bookstore.Domains.Book.Models
     {
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Objects)]
         public Subject Profile { get; set; }
+        public Guid? ProfileId { get; set; }
 
         public bool Equals(Publisher other)
         {

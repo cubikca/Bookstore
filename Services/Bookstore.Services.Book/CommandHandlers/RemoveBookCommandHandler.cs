@@ -27,7 +27,6 @@ namespace Bookstore.Services.Book.CommandHandlers
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
-                result.Exception = new EntityException("Failed to remove book", ex);
             }
             await context.RespondAsync(result);
         }

@@ -35,7 +35,6 @@ namespace Bookstore.Services.People.QueryHandlers
             {
                 var msg = $"Failed to retrieve Entit{(context.Message.AddressId.HasValue ? "y" : "ies")}";
                 _logger.LogError(ex, msg);
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

@@ -10,6 +10,5 @@ namespace Bookstore.Domains.Book
         public string Message { get; set; }
         public string Warning { get; set; }
         public string Error { get; set; }
-        public Exception Exception { get; set; }
     }
 }

@@ -31,7 +31,6 @@ namespace Bookstore.Services.People.CommandHandlers
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

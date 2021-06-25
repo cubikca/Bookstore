@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookstore.Entities.People.Migrations
 {
     [DbContext(typeof(PeopleContext))]
-    [Migration("20210612170627_InitialCreate")]
+    [Migration("20210622133638_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,7 +31,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<Guid?>("CountryId")
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -52,7 +52,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Street2")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -76,7 +76,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Abbreviation")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -88,7 +88,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -105,7 +105,7 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -120,7 +120,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<bool>("Primary")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -140,7 +140,7 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -161,7 +161,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<Guid?>("StreetAddressId")
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -199,7 +199,7 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -220,7 +220,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Twitter")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -240,7 +240,7 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -252,7 +252,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("OrganizationName")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -269,7 +269,7 @@ namespace Bookstore.Entities.People.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -305,7 +305,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Title")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -373,7 +373,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("AreaCode")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -388,7 +388,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -411,7 +411,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<Guid?>("CountryId")
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -423,7 +423,7 @@ namespace Bookstore.Entities.People.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
