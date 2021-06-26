@@ -1,0 +1,29 @@
+version: '3.4'
+
+services:
+  bookstore.services.book.worker:
+    image: cubikca.azurecr.io/bookstore/booksworker
+    build:
+      context: .
+      dockerfile: Services/Workers/Bookstore.Services.Book.Worker/Dockerfile
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    tty: true
+    stdin_open: true
+  bookstore.services.people.worker:
+    image: cubikca.azurecr.io/bookstore/booksworker
+    build:
+      context: .
+      dockerfile: Services/Workers/Bookstore.Services.People.Worker/Dockerfile
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    tty: true
+    stdin_open: true
+  mysql:
+    image: mysql
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+    ports: 
+      - 3306:3306
+    volumes:
+      - C:/MySQL:/var/lib/mysql
