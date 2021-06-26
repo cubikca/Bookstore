@@ -8,9 +8,9 @@ namespace Bookstore.Domains.People.Models
     {
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
         public string AreaCode { get; set; }
         public string Phone { get; set; }
         public string Extension { get; set; }
@@ -32,7 +32,7 @@ namespace Bookstore.Domains.People.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && AreaCode == other.AreaCode && Phone == other.Phone && Extension == other.Extension;
+            return AreaCode == other.AreaCode && Phone == other.Phone && Extension == other.Extension;
         }
 
         public override bool Equals(object obj)

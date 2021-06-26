@@ -7,9 +7,16 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Azure.Identity" Version="1.4.0" />
+        <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.2.0" />
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.8.3" />
+        <PackageReference Include="Enchilada" Version="1.1.0" />
+        <PackageReference Include="Enchilada.Azure" Version="1.1.0" />
         <PackageReference Include="MassTransit.AspNetCore" Version="7.2.0" />
+        <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="7.2.0" />
+        <PackageReference Include="MassTransit.Azure.Storage" Version="7.2.0" />
         <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.2.0" />
-        <PackageReference Include="MassTransit.RabbitMQ" Version="7.2.0" />
+        <PackageReference Include="MassTransit.MessageData.Enchilada" Version="2.0.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.5" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="5.0.5" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
@@ -19,5 +26,11 @@
     <ItemGroup>
       <ProjectReference Include="..\..\..\Entities\Bookstore.Entities.Book\Bookstore.Entities.Book.csproj" />
       <ProjectReference Include="..\..\Bookstore.Services.Book\Bookstore.Services.Book.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="bookstore.pfx">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 </Project>

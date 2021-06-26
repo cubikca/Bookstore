@@ -8,5 +8,6 @@ namespace Bookstore.Domains.Book.Repositories
 {
     public interface IPublisherRepository  : IRepository<Publisher>
     {
+        Task<Publisher> FindPublisherForBook(Guid bookId);
     }
 }

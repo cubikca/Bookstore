@@ -1,23 +1,34 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Bookstore.Domains.Book.Models;
 using Bookstore.Domains.Book.Queries;
 using Bookstore.Domains.Book.QueryResults;
 using Bookstore.Domains.Book.Repositories;
+using Bookstore.Domains.People.Models;
+using Bookstore.Domains.People.Queries;
+using Bookstore.Domains.People.QueryResults;
 using Bookstore.Entities.Book;
 using MassTransit;
+using MassTransit.MessageData;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace Bookstore.Services.Book.QueryHandlers
 {
     public class FindPublishersQueryHandler : IConsumer<FindPublishersQuery>
     {
         private readonly IPublisherRepository _publishers;
+        private readonly IRequestClient<FindSubjectsQuery> _findSubjectsQuery;
+        private readonly IMessageDataRepository _messageData;
 
-        public FindPublishersQueryHandler(IPublisherRepository publishers)
+        public FindPublishersQueryHandler(IPublisherRepository publishers, IRequestClient<FindSubjectsQuery> findSubjectsQuery, IMessageDataRepository messageData)
         {
             _publishers = publishers;
+            _findSubjectsQuery = findSubjectsQuery;
+            _messageData = messageData;
         }
         
         public async Task Consume(ConsumeContext<FindPublishersQuery> context)
@@ -25,17 +36,34 @@ namespace Bookstore.Services.Book.QueryHandlers
             var result = new FindPublishersQueryResult();
             try
             {
+                var results = new List<Publisher>();
                 if (context.Message.PublisherId.HasValue)
-                    result.Results = new List<Publisher>
-                        {await _publishers.Find(context.Message.PublisherId.Value)};
+                {
+                    var publisher = await _publishers.Find(context.Message.PublisherId.Value);
+                    if (publisher != null) results.Add(publisher);
+                }
                 else
-                    result.Results = (await _publishers.FindAll()).ToList();
+                    results.AddRange(await _publishers.FindAll());
+                var tasks = results.Select(async r =>
+                {
+                    if (r.ProfileId != null)
+                    {
+                        var findSubjectResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
+                            new FindSubjectsQuery { SubjectId = r.ProfileId.Value });
+                        var json = await findSubjectResponse.Message.Results.Value;
+                        var profiles = JsonConvert.DeserializeObject<List<Subject>>(json, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects })
+                            ?? Enumerable.Empty<Subject>().ToList();
+                        r.Profile = profiles.SingleOrDefault();
+                    }
+                });
+                await Task.WhenAll(tasks);
+                var json = JsonConvert.SerializeObject(results);
+                result.Results = await _messageData.PutString(json);
                 result.Success = true;
             }
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
-                result.Exception = new EntityException("Failed to find publishers", ex);
             }
             await context.RespondAsync(result);
         }

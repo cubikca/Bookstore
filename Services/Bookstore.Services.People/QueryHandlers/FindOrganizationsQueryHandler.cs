@@ -9,39 +9,42 @@ using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
 using MassTransit;
+using MassTransit.MessageData;
+using Newtonsoft.Json;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
-    public class FindCompaniesQueryHandler : IConsumer<FindCompaniesQuery>
+    public class FindOrganizationsQueryHandler : IConsumer<FindOrganizationsQuery>
     {
         private readonly IOrganizationRepository _organizations;
+        private readonly IMessageDataRepository _messageData;
 
-        public FindCompaniesQueryHandler(IOrganizationRepository organizations)
+        public FindOrganizationsQueryHandler(IOrganizationRepository organizations, IMessageDataRepository messageData)
         {
             _organizations = organizations;
+            _messageData = messageData;
         }
 
-        public async Task Consume(ConsumeContext<FindCompaniesQuery> context)
+        public async Task Consume(ConsumeContext<FindOrganizationsQuery> context)
         {
-            var result = new FindCompaniesQueryResult { Results = new List<Organization>() } ;
+            var result = new FindOrganizationsQueryResult();
+            var organizations = Enumerable.Empty<Organization>().ToList();
             try
             {
                 if (context.Message.CompanyId.HasValue)
                 {
                     var company = await _organizations.Find(context.Message.CompanyId.Value);
                     if (company != null)
-                        result.Results.Add(company);
+                        organizations.Add(company);
                 }
                 else
-                {
-                    var companies = await _organizations.FindAll();
-                    result.Results = companies.ToList();
-                }
+                    organizations = (await _organizations.FindAll()).ToList();
+                var json = JsonConvert.SerializeObject(organizations);
+                result.Results = await _messageData.PutString(json);
             }
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

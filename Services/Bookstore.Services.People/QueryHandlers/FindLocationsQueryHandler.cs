@@ -8,7 +8,9 @@ using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
 using MassTransit;
+using MassTransit.MessageData;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
@@ -16,11 +18,13 @@ namespace Bookstore.Services.People.QueryHandlers
     {
         private readonly ILogger<FindLocationsQueryHandler> _logger;
         private readonly ILocationRepository _locations;
-
-        public FindLocationsQueryHandler(ILocationRepository locations, ILogger<FindLocationsQueryHandler> logger)
+        private readonly IMessageDataRepository _messageData;
+        
+        public FindLocationsQueryHandler(ILocationRepository locations, ILogger<FindLocationsQueryHandler> logger, IMessageDataRepository messageData)
         {
             _locations = locations;
             _logger = logger;
+            _messageData = messageData;
         }
         
         public async Task Consume(ConsumeContext<FindLocationsQuery> context)
@@ -28,9 +32,17 @@ namespace Bookstore.Services.People.QueryHandlers
             var result = new FindLocationsQueryResult();
             try
             {
-                result.Results = context.Message.LocationId.HasValue 
-                    ? new List<Location> {await _locations.Find(context.Message.LocationId.Value)} 
-                    : (await _locations.FindAll()).ToList();
+                var locations = Enumerable.Empty<Location>().ToList();
+                if (context.Message.LocationId.HasValue)
+                {
+                    var location = await _locations.Find(context.Message.LocationId.Value);
+                    if (location != null)
+                        locations.Add(location);
+                }
+                else
+                    locations.AddRange(await _locations.FindAll());
+                var json = JsonConvert.SerializeObject(locations);
+                result.Results = await _messageData.PutString(json);
             }
             catch (Exception ex)
             {
@@ -38,7 +50,6 @@ namespace Bookstore.Services.People.QueryHandlers
                     $"Failed to retrieve Entit{(context.Message.LocationId.HasValue ? "y" : "ies")} of type Location";
                 _logger.LogError(ex, message);
                 result.Error = message;
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

@@ -31,7 +31,6 @@ namespace Bookstore.Services.People.CommandHandlers
                 var msg = "Failed to remove Entity of type Location";
                 _logger.LogError(ex, msg);
                 result.Error = msg;
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

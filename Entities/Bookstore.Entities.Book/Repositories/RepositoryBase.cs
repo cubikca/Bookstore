@@ -67,7 +67,7 @@ namespace Bookstore.Entities.Book.Repositories
             {
                 await using var db = DbFactory.CreateDbContext();
                 var entity = await db.Set<TEntity>().FindAsync(id);
-                return entity != null ? Mapper.Map<TModel>(entity) : null;
+                return entity is { Deleted: false } ? Mapper.Map<TModel>(entity) : null;
             }
             catch (Exception ex)
             {
@@ -82,7 +82,7 @@ namespace Bookstore.Entities.Book.Repositories
             try
             {
                 await using var db = DbFactory.CreateDbContext();
-                return Mapper.Map<List<TModel>>(await db.Set<TEntity>().ToListAsync());
+                return Mapper.Map<List<TModel>>(await db.Set<TEntity>().Where(x => !x.Deleted).ToListAsync());
             }
             catch (Exception ex)
             {
@@ -100,7 +100,7 @@ namespace Bookstore.Entities.Book.Repositories
                     TransactionScopeAsyncFlowOption.Enabled);
                 await using var db = DbFactory.CreateDbContext();
                 var entity = await db.Set<TEntity>().FindAsync(id);
-                if (entity == null) return false;
+                if (entity == null || entity.Deleted) return false;
                 entity.Deleted = true;
                 entity.Updated = DateTime.Now;
                 entity.UpdatedBy = Thread.CurrentPrincipal?.Identity?.Name ?? "Anonymous";

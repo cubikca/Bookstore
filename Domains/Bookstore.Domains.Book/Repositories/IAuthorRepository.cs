@@ -8,5 +8,6 @@ namespace Bookstore.Domains.Book.Repositories
 {
     public interface IAuthorRepository : IRepository<Author>
     {
+        Task<ICollection<Author>> FindByBook(Guid bookId);
     }
 }

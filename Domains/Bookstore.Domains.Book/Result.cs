@@ -10,7 +10,6 @@ namespace Bookstore.Domains.Book
         public string Message { get; set; }
         public string Warning { get; set; }
         public string Error { get; set; }
-        public Exception Exception { get; set; }
         
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
@@ -19,7 +18,6 @@ namespace Bookstore.Domains.Book
             info.AddValue(nameof(Message), Message);
             info.AddValue(nameof(Warning), Warning);
             info.AddValue(nameof(Error), Error);
-            info.AddValue(nameof(Exception), Exception);
         }
     }
 }

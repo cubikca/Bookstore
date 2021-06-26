@@ -34,13 +34,13 @@ namespace Bookstore.Domains.People.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Name, Abbreviation, Country);
+            return HashCode.Combine(Id, Name, Abbreviation, Country);
         }
 
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
     }
 }

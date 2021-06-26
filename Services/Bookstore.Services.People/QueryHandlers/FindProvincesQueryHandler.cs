@@ -10,22 +10,26 @@ using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
 using MassTransit;
+using MassTransit.MessageData;
+using Newtonsoft.Json;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
     public class FindProvincesQueryHandler : IConsumer<FindProvincesQuery>
     {
         private readonly IProvinceRepository _provinces;
+        private readonly IMessageDataRepository _messageData;
 
-        public FindProvincesQueryHandler(IProvinceRepository provinces)
+        public FindProvincesQueryHandler(IProvinceRepository provinces, IMessageDataRepository messageData)
         {
             _provinces = provinces;
+            _messageData = messageData;
         }
 
         public async Task Consume(ConsumeContext<FindProvincesQuery> context)
         {
             var queryResults = new List<Province>();
-            var result = new FindProvincesQueryResult {Results = queryResults};
+            var result = new FindProvincesQueryResult();
             try
             {
                 if (context.Message.ProvinceId != null && context.Message.CountryId != null) throw new PeopleException("Must provide exactly one of province and country id for retrieve provinces query");
@@ -45,11 +49,12 @@ namespace Bookstore.Services.People.QueryHandlers
                     queryResults.AddRange(provinces ?? Enumerable.Empty<Province>());
                 }
                 result.Success = true;
+                var json = JsonConvert.SerializeObject(queryResults);
+                result.Results = await _messageData.PutString(json);
             }
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

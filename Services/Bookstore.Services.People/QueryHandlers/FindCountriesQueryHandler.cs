@@ -10,40 +10,43 @@ using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
 using MassTransit;
+using MassTransit.MessageData;
+using Newtonsoft.Json;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
     public class FindCountriesQueryHandler : IConsumer<FindCountriesQuery> 
     {
         private readonly ICountryRepository _countries;
+        private readonly IMessageDataRepository _messageData;
 
-        public FindCountriesQueryHandler(ICountryRepository countries)
+        public FindCountriesQueryHandler(ICountryRepository countries, IMessageDataRepository messageData)
         {
             _countries = countries;
+            _messageData = messageData;
         }
 
         public async Task Consume(ConsumeContext<FindCountriesQuery> context)
         {
-            var result = new FindCountriesQueryResult {Results = new List<Country>()};
+            var result = new FindCountriesQueryResult();
             try
             {
+                var countries = Enumerable.Empty<Country>().ToList();
                 if (context.Message.CountryId.HasValue)
                 {
                     var country = await _countries.Find(context.Message.CountryId.Value);
                     if (country != null)
-                        result.Results.Add(country);
+                        countries.Add(country);
                 }
                 else
-                {
-                    var countries = await _countries.FindAll();
-                    result.Results = countries.ToList();
-                }
+                    countries = (await _countries.FindAll()).ToList();
+                var json = JsonConvert.SerializeObject(countries);
+                result.Results = await _messageData.PutString(json);
                 result.Success = true;
             }
             catch (Exception ex)
             {
                 result.Error = ex.GetBaseException().Message;
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

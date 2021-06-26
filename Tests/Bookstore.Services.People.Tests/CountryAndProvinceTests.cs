@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Storage.Blobs;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Models;
@@ -14,6 +18,9 @@ using Bookstore.Domains.People.Repositories;
 using Bookstore.ObjectFillers;
 using GreenPipes;
 using MassTransit;
+using MassTransit.Azure.ServiceBus.Core.Configurators;
+using MassTransit.MessageData;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,8 +44,21 @@ namespace Bookstore.Services.People.Tests
         private CountryFiller _countryFiller;
         private ProvinceFiller _provinceFiller;
         
-        private void ConfigureServices(IServiceCollection services, IConfiguration config)
+        private static void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
+            var azureConfig = config.GetSection("Azure");
+            var certificate = new X509Certificate2(azureConfig["CertificatePath"], azureConfig["CertificatePassphrase"]);
+            var credential = new ClientCertificateCredential(azureConfig["TenantId"], azureConfig["ApplicationId"], certificate);
+            services.AddSingleton(credential);
+            var keyVaultConfig = config.GetSection("KeyVault");
+            var secretClient = new SecretClient(new Uri(keyVaultConfig["Url"]), credential, new SecretClientOptions());
+            services.AddSingleton(secretClient);
+            var storageConfig = config.GetSection("AzureStorage");
+            var blobServiceClient =
+                new BlobServiceClient(new Uri($"https://{storageConfig["AccountName"]}.blob.core.windows.net"),
+                    new ManagedIdentityCredential());
+            var messageDataRepository = blobServiceClient.CreateMessageDataRepository(storageConfig["MessageDataContainer"]);
+            services.AddSingleton<IMessageDataRepository>(messageDataRepository);
             services.AddLogging(log => log.AddConsole());
             services.AddMassTransit(mt =>
             {
@@ -48,11 +68,20 @@ namespace Bookstore.Services.People.Tests
                 mt.AddRequestClient<SaveProvinceCommand>();
                 mt.AddRequestClient<FindCountriesQuery>();
                 mt.AddRequestClient<FindProvincesQuery>();
-                mt.UsingRabbitMq((_, rmq) =>
+                mt.UsingAzureServiceBus((_, sb) =>
                 {
-                    var connectionString = config.GetConnectionString("PeopleService");
-                    rmq.Host(new Uri(connectionString));
-                    rmq.UseBsonSerializer();
+                    sb.UseMessageData(messageDataRepository);
+                    var peopleServiceConfig = config.GetSection("PeopleService");
+                    var secretName = peopleServiceConfig["AccessKeySecret"];
+                    var sharedAccessKey = secretClient.GetSecret(secretName).Value.Value;
+                    var hostSettings = new HostSettings
+                    {
+                        ServiceUri = new Uri($"sb://{peopleServiceConfig["ServiceBusNamespace"]}.servicebus.windows.net/"),
+                        TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(peopleServiceConfig["AccessKeyName"],
+                            sharedAccessKey)
+                    };
+                    sb.Host(hostSettings);
+                    sb.UseJsonSerializer();
                 });
             });
         }
@@ -92,8 +121,12 @@ namespace Bookstore.Services.People.Tests
                 new FindProvincesQuery {ProvinceId = province.Id});
             var createdCountryResponse = await _findCountriesQuery.GetResponse<FindCountriesQueryResult>(
                 new FindCountriesQuery {CountryId = country.Id});
-            var createdProvince = createdProvinceResponse.Message.Results.SingleOrDefault();
-            var createdCountry = createdCountryResponse.Message.Results.SingleOrDefault();
+            var provincesJson = await createdProvinceResponse.Message.Results.Value;
+            var provinces = JsonConvert.DeserializeObject<List<Province>>(provincesJson);
+            var createdProvince = provinces.SingleOrDefault();
+            var countriesJson = await createdCountryResponse.Message.Results.Value;
+            var countries = JsonConvert.DeserializeObject<List<Country>>(countriesJson);
+            var createdCountry = countries.SingleOrDefault();
             Assert.IsNotNull(createdProvince);
             Assert.IsNotNull(createdCountry);
             Assert.AreNotSame(province, createdProvince);
@@ -113,8 +146,12 @@ namespace Bookstore.Services.People.Tests
                 new SaveProvinceCommand {Province = province});
             var updatedProvinceResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
                 new FindProvincesQuery {ProvinceId = province.Id});
-            var updatedProvince = updatedProvinceResponse.Message.Results.SingleOrDefault();
-            var updatedCountry = updatedCountryResponse.Message.Results.SingleOrDefault();
+            provincesJson = await updatedProvinceResponse.Message.Results.Value;
+            provinces = JsonConvert.DeserializeObject<List<Province>>(provincesJson);
+            var updatedProvince = provinces.SingleOrDefault();
+            countriesJson = await updatedCountryResponse.Message.Results.Value;
+            countries = JsonConvert.DeserializeObject<List<Country>>(countriesJson);
+            var updatedCountry = countries.SingleOrDefault();
             Assert.NotNull(updatedProvince);
             Assert.NotNull(updatedCountry);
             Assert.AreNotSame(province, updatedProvince);
@@ -146,16 +183,26 @@ namespace Bookstore.Services.People.Tests
                 new FindCountriesQuery {CountryId = province1.Country.Id});
             var findAllCountriesResponse = await _findCountriesQuery.GetResponse<FindCountriesQueryResult>(
                 new FindCountriesQuery());
-            var foundSingleProvince = findSingleProvinceResponse.Message.Results.SingleOrDefault();
-            var foundSingleCountry = findSingleCountryResponse.Message.Results.SingleOrDefault();
+            var provincesJson = await findSingleProvinceResponse.Message.Results.Value;
+            var provinces = JsonConvert.DeserializeObject<List<Province>>(provincesJson);
+            var foundSingleProvince = provinces.SingleOrDefault();
+            var countriesJson = await findSingleCountryResponse.Message.Results.Value;
+            var countries = JsonConvert.DeserializeObject<List<Country>>(countriesJson);
+            var foundSingleCountry = countries.SingleOrDefault();
             Assert.NotNull(foundSingleProvince);
             Assert.NotNull(foundSingleCountry);
             Assert.AreNotSame(province1, foundSingleProvince);
             Assert.AreEqual(province1, foundSingleProvince);
-            Assert.IsTrue(new HashSet<Province> { province1, province2 }.SetEquals(findCountryProvincesResponse.Message.Results));
-            Assert.IsTrue(new HashSet<Province> { province1, province2, province3 }.All(findAllProvincesResponse.Message.Results.Contains));
+            provincesJson = await findCountryProvincesResponse.Message.Results.Value;
+            provinces = JsonConvert.DeserializeObject<List<Province>>(provincesJson);
+            Assert.IsTrue(new HashSet<Province> { province1, province2 }.SetEquals(provinces.ToHashSet()));
+            provincesJson = await findAllProvincesResponse.Message.Results.Value;
+            provinces = JsonConvert.DeserializeObject<List<Province>>(provincesJson);
+            Assert.IsTrue(new HashSet<Province> { province1, province2, province3 }.All(provinces.Contains));
             // province1.Country == province2.Country
-            Assert.IsTrue(new HashSet<Country> {province1.Country, province3.Country}.All(findAllCountriesResponse.Message.Results.Contains));
+            countriesJson = await findAllCountriesResponse.Message.Results.Value;
+            countries = JsonConvert.DeserializeObject<List<Country>>(countriesJson);
+            Assert.IsTrue(new HashSet<Country> {province1.Country, province3.Country}.All(countries.Contains));
         }
 
         [Test]
@@ -171,17 +218,23 @@ namespace Bookstore.Services.People.Tests
                 new RemoveProvinceCommand {ProvinceId = province1.Id});
             var foundProvinceResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
                 new FindProvincesQuery {ProvinceId = province1.Id});
+            var provincesJson = await foundProvinceResponse.Message.Results.Value;
+            var provinces = JsonConvert.DeserializeObject<List<Province>>(provincesJson);
             Assert.IsTrue(removedProvinceResponse.Message.Success);
-            Assert.IsFalse(foundProvinceResponse.Message.Results.Any());
+            Assert.IsFalse(provinces.Any());
             var removedCountryResponse = await _removeCountryCommand.GetResponse<RemoveCountryCommandResult>(
                 new RemoveCountryCommand {CountryId = province2.Country.Id});
             var foundCountryResponse = await _findCountriesQuery.GetResponse<FindCountriesQueryResult>(
                 new FindCountriesQuery {CountryId = province2.Country.Id});
             foundProvinceResponse = await _findProvincesQuery.GetResponse<FindProvincesQueryResult>(
                 new FindProvincesQuery {ProvinceId = province2.Id});
+            var countriesJson = await foundCountryResponse.Message.Results.Value;
+            var countries = JsonConvert.DeserializeObject<List<Country>>(countriesJson);
             Assert.IsTrue(removedCountryResponse.Message.Success);
-            Assert.IsFalse(foundCountryResponse.Message.Results.Any());
-            Assert.IsFalse(foundProvinceResponse.Message.Results.Any());
+            Assert.IsFalse(countries.Any());
+            provincesJson = await foundProvinceResponse.Message.Results.Value;
+            provinces = JsonConvert.DeserializeObject<List<Province>>(provincesJson);
+            Assert.IsFalse(provinces.Any());
         }
 
         [OneTimeTearDown]

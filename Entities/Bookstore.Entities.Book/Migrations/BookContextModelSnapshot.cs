@@ -15,7 +15,7 @@ namespace Bookstore.Entities.Book.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.6");
+                .HasAnnotation("ProductVersion", "5.0.5");
 
             modelBuilder.Entity("AuthorBooks", b =>
                 {
@@ -38,7 +38,7 @@ namespace Bookstore.Entities.Book.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -53,7 +53,7 @@ namespace Bookstore.Entities.Book.Migrations
                     b.Property<decimal>("Salary")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -73,7 +73,7 @@ namespace Bookstore.Entities.Book.Migrations
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -103,7 +103,7 @@ namespace Bookstore.Entities.Book.Migrations
                     b.Property<string>("Title")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")
@@ -122,7 +122,7 @@ namespace Bookstore.Entities.Book.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Created")
+                    b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
@@ -134,7 +134,7 @@ namespace Bookstore.Entities.Book.Migrations
                     b.Property<Guid>("ProfileId")
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("Updated")
+                    b.Property<DateTimeOffset>("Updated")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("UpdatedBy")

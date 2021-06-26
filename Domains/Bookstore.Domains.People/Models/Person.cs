@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
-using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.Models
 {
@@ -61,6 +60,9 @@ namespace Bookstore.Domains.People.Models
             }
         }
 
+        public override Address StreetAddress { get; set; }
+        public override Address MailingAddress { get; set; }
+
         // There are a lot of possibilities here but we can only have one
         // This one seems reasonable and any other combination can be added where it is needed
         public override string Name
@@ -107,7 +109,7 @@ namespace Bookstore.Domains.People.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Title, GivenNames, KnownAs, FamilyName, Initial, Suffix);
+            return HashCode.Combine(Id, Title, GivenNames, KnownAs, FamilyName, Initial, Suffix);
         }
     }
 }

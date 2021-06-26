@@ -8,6 +8,5 @@ namespace Bookstore.Domains.People
         string Error { get; set; }
         string Warning { get; set; }
         string Message { get; set; }
-        Exception Exception { get; set; }
     }
 }

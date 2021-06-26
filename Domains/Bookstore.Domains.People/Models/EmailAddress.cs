@@ -8,9 +8,9 @@ namespace Bookstore.Domains.People.Models
     {
         public Guid Id { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime Created { get; set; }
+        public DateTimeOffset Created { get; set; }
         public string UpdatedBy { get; set; }
-        public DateTime Updated { get; set; }
+        public DateTimeOffset Updated { get; set; }
         public string Email { get; set; }
         public bool Verified { get; set; }
         public bool Primary { get; set; }
@@ -27,7 +27,7 @@ namespace Bookstore.Domains.People.Models
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Id.Equals(other.Id) && Email == other.Email && Verified == other.Verified && Primary == other.Primary;
+            return Email == other.Email && Verified == other.Verified && Primary == other.Primary;
         }
 
         public override bool Equals(object obj)

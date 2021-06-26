@@ -7,7 +7,9 @@ using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Domains.People.Repositories;
 using MassTransit;
+using MassTransit.MessageData;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Bookstore.Services.People.QueryHandlers
 {
@@ -15,11 +17,13 @@ namespace Bookstore.Services.People.QueryHandlers
     {
         private readonly ILogger<FindAddressesQueryHandler> _logger;
         private readonly IAddressRepository _addresses;
+        private readonly IMessageDataRepository _messageData;
 
-        public FindAddressesQueryHandler(IAddressRepository addresses, ILogger<FindAddressesQueryHandler> logger)
+        public FindAddressesQueryHandler(IAddressRepository addresses, ILogger<FindAddressesQueryHandler> logger, IMessageDataRepository messageData)
         {
             _addresses = addresses;
             _logger = logger;
+            _messageData = messageData;
         }
         
         public async Task Consume(ConsumeContext<FindAddressesQuery> context)
@@ -27,15 +31,22 @@ namespace Bookstore.Services.People.QueryHandlers
             var result = new FindAddressesQueryResult();
             try
             {
-                result.Results = context.Message.AddressId.HasValue
-                    ? new List<Address> {await _addresses.Find(context.Message.AddressId.Value)}
-                    : (await _addresses.FindAll()).ToList();
+                List<Address> addresses = Enumerable.Empty<Address>().ToList();
+                if (context.Message.AddressId.HasValue)
+                {
+                    var address = await _addresses.Find(context.Message.AddressId.Value);
+                    if (address != null)
+                        addresses.Add(address);
+                }
+                else
+                    addresses.AddRange(await _addresses.FindAll());
+                var json = JsonConvert.SerializeObject(addresses);
+                result.Results = await _messageData.PutString(json);
             }
             catch (Exception ex)
             {
                 var msg = $"Failed to retrieve Entit{(context.Message.AddressId.HasValue ? "y" : "ies")}";
                 _logger.LogError(ex, msg);
-                result.Exception = ex;
             }
             await context.RespondAsync(result);
         }

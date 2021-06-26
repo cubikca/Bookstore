@@ -36,7 +36,7 @@ namespace Bookstore.Entities.Book.Repositories
                 if (model.Publisher != null)
                 {
                     var publisher = await _publishers.Save(model.Publisher);
-                    entity.Publisher = await db.Publishers.FindAsync(publisher.Id);
+                    entity.Publisher = await db.Publishers.SingleOrDefaultAsync(p => p.Id == publisher.Id && !p.Deleted);
                     entity.PublisherId = publisher.Id;
                 }
                 else
@@ -49,11 +49,11 @@ namespace Bookstore.Entities.Book.Repositories
                 foreach (var author in model.Authors)
                 {
                     var authorModel = await _authors.Save(author);
-                    var authorEntity = await db.Authors.FindAsync(authorModel.Id);
+                    var authorEntity = await db.Authors.SingleOrDefaultAsync(a => a.Id == authorModel.Id && !a.Deleted);
                     if (entity.Authors.All(a => a.Id != authorModel.Id))
                         entity.Authors.Add(authorEntity);
                 }
-                foreach (var author in entity.Authors)
+                foreach (var author in entity.Authors.ToList())
                 {
                     if (model.Authors.All(a => a.Id != author.Id))
                         entity.Authors.Remove(author);
