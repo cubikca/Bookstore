@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Storage.Blobs;
 using Bookstore.Domains.Book;
 using Bookstore.Domains.Book.CommandResults;
 using Bookstore.Domains.Book.Commands;
@@ -36,15 +40,22 @@ namespace Bookstore.Services.Book.Tests
         private IRequestClient<FindAuthorsQuery> _findAuthorsQuery;
         private IRequestClient<RemoveAuthorCommand> _removeAuthorCommand;
         
-        private void ConfigureServices(IServiceCollection services, IConfiguration config)
+        private static void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
-            var blobStorageAdapter = new BlobStorageAdapterConfiguration
-            {
-                ConnectionString = "",
-                ContainerReference = "masstransit"
-            };
-            var messageDataRepository = new EnchiladaMessageDataRepositoryFactory().Create(blobStorageAdapter);
+            var azureConfig = config.GetSection("Azure");
+            var certificate = new X509Certificate2(azureConfig["CertificatePath"], azureConfig["CertificatePassphrase"]);
+            var credential = new ClientCertificateCredential(azureConfig["TenantId"], azureConfig["ApplicationId"], certificate);
+            services.AddSingleton(credential);
+            var keyVaultConfig = config.GetSection("KeyVault");
+            var secretClient = new SecretClient(new Uri(keyVaultConfig["Url"]), credential, new SecretClientOptions());
+            services.AddSingleton(secretClient);
+            var storageConfig = config.GetSection("AzureStorage");
+            var blobServiceClient =
+                new BlobServiceClient(new Uri($"https://{storageConfig["AccountName"]}.blob.core.windows.net"),
+                    new ManagedIdentityCredential());
+            var messageDataRepository = blobServiceClient.CreateMessageDataRepository(storageConfig["MessageDataContainer"]);
             services.AddSingleton<IMessageDataRepository>(messageDataRepository);
+            services.AddLogging(log => log.AddConsole());
             services.AddLogging(log => log.AddConsole().SetMinimumLevel(LogLevel.Debug));
             services.AddMassTransit(mt =>
             {
@@ -56,12 +67,13 @@ namespace Bookstore.Services.Book.Tests
                     sb.UseMessageData(messageDataRepository);
                     var booksConfig = config.GetSection("BooksService");
                     var booksConnection = $"sb://{booksConfig["ServiceBusNamespace"]}.servicebus.windows.net";
+                    var secretName = booksConfig["AccessKeySecret"];
+                    var sharedAccessKey = secretClient.GetSecret(secretName).Value.Value;
                     var hostSettings = new HostSettings
                     {
                         ServiceUri = new Uri(booksConnection),
                         TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(
-                            booksConfig["AccessKeyName"],
-                            booksConfig["AccessKey"])
+                            booksConfig["AccessKeyName"], sharedAccessKey)
                     };
                     sb.Host(hostSettings);
                     sb.UseJsonSerializer();

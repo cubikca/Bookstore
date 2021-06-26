@@ -1,6 +1,6 @@
 using MassTransit;
 
-namespace Bookstore.Services.Book
+namespace Bookstore.Domains.People
 {
     // This is a well-known convention for supporting named dependencies in a container that doesn't do so natively.
     // MassTransit supports this convention and will create an IBusControl tagged with the appropriate interface, allowing

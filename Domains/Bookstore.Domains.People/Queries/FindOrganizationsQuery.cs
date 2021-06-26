@@ -6,7 +6,7 @@ using Bookstore.Domains.People.QueryResults;
 
 namespace Bookstore.Domains.People.Queries
 {
-    public class FindCompaniesQuery
+    public class FindOrganizationsQuery
     {
         public Guid? CompanyId { get; set; }
     }

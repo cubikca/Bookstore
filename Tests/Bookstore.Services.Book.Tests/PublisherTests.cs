@@ -54,11 +54,9 @@ namespace Bookstore.Services.Book.Tests
             var secretClient = new SecretClient(new Uri(keyVaultConfig["Url"]), credential, new SecretClientOptions());
             services.AddSingleton(secretClient);
             var storageConfig = config.GetSection("AzureStorage");
-            var sas = secretClient.GetSecret($"{storageConfig["AccountName"]}-{storageConfig["SasPolicyName"]}");
-            var sasCredential = new AzureSasCredential(sas.Value.Value);
             var blobServiceClient =
                 new BlobServiceClient(new Uri($"https://{storageConfig["AccountName"]}.blob.core.windows.net"),
-                    sasCredential);
+                    new ManagedIdentityCredential());
             var messageDataRepository = blobServiceClient.CreateMessageDataRepository(storageConfig["MessageDataContainer"]);
             services.AddSingleton<IMessageDataRepository>(messageDataRepository);
             services.AddLogging(log => log.AddConsole());

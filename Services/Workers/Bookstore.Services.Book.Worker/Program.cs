@@ -11,6 +11,7 @@ using Bookstore.Domains.Book;
 using Bookstore.Domains.Book.Commands;
 using Bookstore.Domains.Book.QueryResults;
 using Bookstore.Domains.Book.Repositories;
+using Bookstore.Domains.People;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Entities.Book;
@@ -64,6 +65,7 @@ namespace Bookstore.Services.Book.Worker
                 cfg.AddProfile<DefaultProfile>();
             });
             services.AddSingleton(mapperConfig.CreateMapper());
+            MessageDataDefaults.Threshold = 256 * 1024;
             MessageDataDefaults.TimeToLive = TimeSpan.FromDays(2);
             var blobServiceClient = new BlobServiceClient(new Uri($"https://{storageConfig["AccountName"]}.blob.core.windows.net/"), new ManagedIdentityCredential());
             var messageDataRepository = blobServiceClient.CreateMessageDataRepository(storageConfig["MessageDataContainer"]);

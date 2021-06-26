@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MassTransit;
 using Newtonsoft.Json;
 
 namespace Bookstore.Domains.People.QueryResults
@@ -7,6 +8,6 @@ namespace Bookstore.Domains.People.QueryResults
     public class QueryResult<T> : Result
     {
         [JsonProperty(TypeNameHandling = TypeNameHandling.Objects, ItemTypeNameHandling = TypeNameHandling.Objects)]
-        public IList<T> Results { get; set; } 
+        public MessageData<string> Results { get; set; } 
     }
 }

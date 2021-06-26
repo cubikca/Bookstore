@@ -7,6 +7,7 @@ using Bookstore.Domains.Book.Models;
 using Bookstore.Domains.Book.Queries;
 using Bookstore.Domains.Book.QueryResults;
 using Bookstore.Domains.Book.Repositories;
+using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Entities.Book;
@@ -49,7 +50,10 @@ namespace Bookstore.Services.Book.QueryHandlers
                     {
                         var findSubjectResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
                             new FindSubjectsQuery { SubjectId = r.ProfileId.Value });
-                        r.Profile = findSubjectResponse.Message.Results.SingleOrDefault();
+                        var json = await findSubjectResponse.Message.Results.Value;
+                        var profiles = JsonConvert.DeserializeObject<List<Subject>>(json, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects })
+                            ?? Enumerable.Empty<Subject>().ToList();
+                        r.Profile = profiles.SingleOrDefault();
                     }
                 });
                 await Task.WhenAll(tasks);

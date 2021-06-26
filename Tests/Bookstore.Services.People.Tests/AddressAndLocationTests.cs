@@ -1,19 +1,27 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Storage.Blobs;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
+using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.ObjectFillers;
 using MassTransit;
 using MassTransit.Azure.ServiceBus.Core.Configurators;
+using MassTransit.MessageData;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Bookstore.Services.People.Tests
@@ -31,8 +39,21 @@ namespace Bookstore.Services.People.Tests
         private AddressFiller _addressFiller;
         private LocationFiller _locationFiller;
         
-        private void ConfigureServices(IServiceCollection services, IConfiguration config)
+        private static void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
+            var azureConfig = config.GetSection("Azure");
+            var certificate = new X509Certificate2(azureConfig["CertificatePath"], azureConfig["CertificatePassphrase"]);
+            var credential = new ClientCertificateCredential(azureConfig["TenantId"], azureConfig["ApplicationId"], certificate);
+            services.AddSingleton(credential);
+            var keyVaultConfig = config.GetSection("KeyVault");
+            var secretClient = new SecretClient(new Uri(keyVaultConfig["Url"]), credential, new SecretClientOptions());
+            services.AddSingleton(secretClient);
+            var storageConfig = config.GetSection("AzureStorage");
+            var blobServiceClient =
+                new BlobServiceClient(new Uri($"https://{storageConfig["AccountName"]}.blob.core.windows.net"),
+                    new ManagedIdentityCredential());
+            var messageDataRepository = blobServiceClient.CreateMessageDataRepository(storageConfig["MessageDataContainer"]);
+            services.AddSingleton<IMessageDataRepository>(messageDataRepository);
             services.AddLogging(cfg => cfg.AddConsole());
             services.AddMassTransit(mt =>
             {
@@ -44,16 +65,19 @@ namespace Bookstore.Services.People.Tests
                 mt.AddRequestClient<RemoveLocationCommand>();
                 mt.UsingAzureServiceBus((ctx, sb) =>
                 {
+                    sb.UseMessageData(messageDataRepository);
                     var peopleConfig = config.GetSection("PeopleService");
                     var peopleConnection = $"sb://{peopleConfig["ServiceBusNamespace"]}.servicebus.windows.net/";
+                    var secretName = peopleConfig["AccessKeySecret"];
+                    var sharedAccessKey = secretClient.GetSecret(secretName).Value.Value;
                     var hostSettings = new HostSettings
                     {
                         ServiceUri = new Uri(peopleConnection),
                         TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(peopleConfig["AccessKeyName"],
-                            peopleConfig["AccessKey"])
+                            sharedAccessKey)
                     };
                     sb.Host(hostSettings);
-                    sb.UseBsonSerializer();
+                    sb.UseJsonSerializer();
                 });
             });
         }
@@ -110,7 +134,9 @@ namespace Bookstore.Services.People.Tests
                 new SaveLocationCommand {Location = updatedLocation});
             var findLocationResponse = await _findLocationsQuery.GetResponse<FindLocationsQueryResult>(
                 new FindLocationsQuery {LocationId = updatedLocation.Id});
-            var foundLocation = findLocationResponse.Message.Results.SingleOrDefault();
+            var locationsJson = await findLocationResponse.Message.Results.Value;
+            var locations = JsonConvert.DeserializeObject<List<Location>>(locationsJson);
+            var foundLocation = locations.SingleOrDefault();
             Assert.NotNull(foundLocation);
             // this is really the best we can do. the address updates were saved through a different repository
             // and so our local object is out of sync with the database. Only Find() will give us an object for comparison
@@ -136,9 +162,15 @@ namespace Bookstore.Services.People.Tests
                 new FindAddressesQuery {AddressId = location.MailingAddress.Id});
             var foundStreetAddressResponse = await _findAddressesQuery.GetResponse<FindAddressesQueryResult>(
                 new FindAddressesQuery {AddressId = location.StreetAddress.Id});
-            var foundLocation = foundLocationResponse.Message.Results.SingleOrDefault();
-            var foundMailingAddress = foundMailingAddressResponse.Message.Results.SingleOrDefault();
-            var foundStreetAddress = foundStreetAddressResponse.Message.Results.SingleOrDefault();
+            var locationsJson = await foundLocationResponse.Message.Results.Value;
+            var locations = JsonConvert.DeserializeObject<List<Location>>(locationsJson);
+            var foundLocation = locations.SingleOrDefault();
+            var addressJson1 = await foundMailingAddressResponse.Message.Results.Value;
+            var addresses1 = JsonConvert.DeserializeObject<List<Address>>(addressJson1);
+            var foundMailingAddress = addresses1.SingleOrDefault();
+            var addressJson2 = await foundStreetAddressResponse.Message.Results.Value;
+            var addresses2 = JsonConvert.DeserializeObject<List<Address>>(addressJson2);
+            var foundStreetAddress = addresses2.SingleOrDefault();
             Assert.NotNull(foundLocation);
             Assert.NotNull(foundMailingAddress);
             Assert.NotNull(foundStreetAddress);
@@ -160,7 +192,9 @@ namespace Bookstore.Services.People.Tests
                 new RemoveAddressCommand {AddressId = location.StreetAddress.Id});
             var foundLocationResponse = await _findLocationsQuery.GetResponse<FindLocationsQueryResult>(
                 new FindLocationsQuery {LocationId = location.Id});
-            location = foundLocationResponse.Message.Results.SingleOrDefault();
+            var locationsJson = await foundLocationResponse.Message.Results.Value;
+            var locations = JsonConvert.DeserializeObject<List<Location>>(locationsJson);
+            location = locations.SingleOrDefault();
             Assert.NotNull(location);
             Assert.IsTrue(removeStreetAddressResponse.Message.Success);
             Assert.IsNull(location.StreetAddress);
@@ -171,8 +205,12 @@ namespace Bookstore.Services.People.Tests
                 new FindLocationsQuery {LocationId = location.Id});
             var foundMailingAddressResponse = await _findAddressesQuery.GetResponse<FindAddressesQueryResult>(
                 new FindAddressesQuery {AddressId = location.MailingAddress.Id});
-            var foundLocation = foundLocationResponse.Message.Results.SingleOrDefault();
-            var foundMailingAddress = foundMailingAddressResponse.Message.Results.SingleOrDefault();
+            locationsJson = await foundLocationResponse.Message.Results.Value;
+            locations = JsonConvert.DeserializeObject<List<Location>>(locationsJson);
+            var foundLocation = locations.SingleOrDefault();
+            var addressesJson = await foundMailingAddressResponse.Message.Results.Value;
+            var addresses = JsonConvert.DeserializeObject<List<Address>>(addressesJson);
+            var foundMailingAddress = addresses.SingleOrDefault();
             Assert.IsNull(foundMailingAddress);
             Assert.IsNull(foundLocation);
         }

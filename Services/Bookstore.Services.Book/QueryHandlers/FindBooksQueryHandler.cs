@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Bookstore.Domains.Book.Queries;
 using Bookstore.Domains.Book.QueryResults;
 using Bookstore.Domains.Book.Repositories;
+using Bookstore.Domains.People.Models;
 using Bookstore.Domains.People.Queries;
 using Bookstore.Domains.People.QueryResults;
 using Bookstore.Entities.Book;
@@ -48,7 +49,10 @@ namespace Bookstore.Services.Book.QueryHandlers
                     {
                         var profileResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
                             new FindSubjectsQuery { SubjectId = book.Publisher.ProfileId.Value });
-                        book.Publisher.Profile = profileResponse.Message.Results.SingleOrDefault();
+                        var publisherJson = await profileResponse.Message.Results.Value;
+                        var profiles = JsonConvert.DeserializeObject<List<Subject>>(publisherJson, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects })
+                            ?? Enumerable.Empty<Subject>().ToList();
+                        book.Publisher.Profile = profiles.SingleOrDefault();
                     }
                     var fillAuthorProfilesTasks = book.Authors.Select(async author =>
                     {
@@ -56,7 +60,10 @@ namespace Bookstore.Services.Book.QueryHandlers
                         {
                             var profileResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
                                 new FindSubjectsQuery { SubjectId = author.ProfileId.Value });
-                            author.Profile = profileResponse.Message.Results.SingleOrDefault();
+                            var authorJson = await profileResponse.Message.Results.Value;
+                            var profiles = JsonConvert.DeserializeObject<List<Subject>>(authorJson, new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Objects })
+                                ?? Enumerable.Empty<Subject>().ToList();
+                            author.Profile = profiles.SingleOrDefault();
                         }
                     });
                     await Task.WhenAll(fillAuthorProfilesTasks);

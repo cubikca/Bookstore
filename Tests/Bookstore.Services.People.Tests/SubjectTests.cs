@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Storage.Blobs;
 using Bookstore.Domains.People.CommandResults;
 using Bookstore.Domains.People.Commands;
 using Bookstore.Domains.People.Models;
@@ -13,6 +17,7 @@ using Bookstore.Domains.People.QueryResults;
 using Bookstore.ObjectFillers;
 using MassTransit;
 using MassTransit.Azure.ServiceBus.Core.Configurators;
+using MassTransit.MessageData;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,8 +37,21 @@ namespace Bookstore.Services.People.Tests
         private PersonFiller _personFiller;
         private OrganizationFiller _organizationFiller;
         
-        private void ConfigureServices(IServiceCollection services, IConfiguration config)
+        private static void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
+            var azureConfig = config.GetSection("Azure");
+            var certificate = new X509Certificate2(azureConfig["CertificatePath"], azureConfig["CertificatePassphrase"]);
+            var credential = new ClientCertificateCredential(azureConfig["TenantId"], azureConfig["ApplicationId"], certificate);
+            services.AddSingleton(credential);
+            var keyVaultConfig = config.GetSection("KeyVault");
+            var secretClient = new SecretClient(new Uri(keyVaultConfig["Url"]), credential, new SecretClientOptions());
+            services.AddSingleton(secretClient);
+            var storageConfig = config.GetSection("AzureStorage");
+            var blobServiceClient =
+                new BlobServiceClient(new Uri($"https://{storageConfig["AccountName"]}.blob.core.windows.net"),
+                    new ManagedIdentityCredential());
+            var messageDataRepository = blobServiceClient.CreateMessageDataRepository(storageConfig["MessageDataContainer"]);
+            services.AddSingleton<IMessageDataRepository>(messageDataRepository);
             services.AddLogging(cfg => cfg.AddConsole());
             services.AddMassTransit(mt =>
             {
@@ -42,15 +60,18 @@ namespace Bookstore.Services.People.Tests
                 mt.AddRequestClient<RemoveSubjectCommand>();
                 mt.UsingAzureServiceBus((ctx, sb) =>
                 {
+                    sb.UseMessageData(messageDataRepository);
                     var peopleConfig = config.GetSection("PeopleService");
+                    var secretName = peopleConfig["AccessKeySecret"];
+                    var sharedAccessKey = secretClient.GetSecret(secretName).Value.Value;
                     var peopleConnection = $"sb://{peopleConfig["ServiceBusNamespace"]}.servicebus.windows.net/";
                     var hostSettings = new HostSettings
                     {
                         ServiceUri = new Uri(peopleConnection),
-                        TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(peopleConfig["AccessKeyName"], peopleConfig["AccessKey"])
+                        TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(peopleConfig["AccessKeyName"], sharedAccessKey)
                     };
                     sb.Host(hostSettings);
-                    sb.UseBsonSerializer();
+                    sb.UseJsonSerializer();
                 });
             });
        }
@@ -118,18 +139,25 @@ namespace Bookstore.Services.People.Tests
                 new FindSubjectsQuery {SubjectId = person.Id});
             var foundOrganizationResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
                 new FindSubjectsQuery {SubjectId = organization.Id});
-            var foundPerson = foundPersonResponse.Message.Results.SingleOrDefault();
-            var foundOrganization = foundOrganizationResponse.Message.Results.SingleOrDefault();
+            var peopleJson = await foundPersonResponse.Message.Results.Value;
+            var people = JsonConvert.DeserializeObject<List<Person>>(peopleJson);
+            var foundPerson = people.SingleOrDefault();
+            var organizationsJson = await foundOrganizationResponse.Message.Results.Value;
+            var organizations = JsonConvert.DeserializeObject<List<Organization>>(organizationsJson);
+            var foundOrganization = organizations.SingleOrDefault();
             var allSubjectsResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
                 new FindSubjectsQuery());
+            var subjectsJson = await allSubjectsResponse.Message.Results.Value;
+            var subjects = JsonConvert.DeserializeObject<List<Subject>>(subjectsJson, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects })
+                ?? Enumerable.Empty<Subject>().ToList();
             Assert.NotNull(foundPerson);
             Assert.NotNull(foundOrganization);
             Assert.AreEqual(person, foundPerson);
             Assert.AreEqual(organization, foundOrganization);
-            Assert.IsTrue(allSubjectsResponse.Message.Results.Any(r => r.Id == person.Id));
-            Assert.IsTrue(allSubjectsResponse.Message.Results.Contains(person));
-            Assert.IsTrue(allSubjectsResponse.Message.Results.Any(r => r.Id == organization.Id));
-            Assert.IsTrue(allSubjectsResponse.Message.Results.Contains(organization));
+            Assert.IsTrue(subjects.Any(r => r.Id == person.Id));
+            Assert.IsTrue(subjects.Contains(person));
+            Assert.IsTrue(subjects.Any(r => r.Id == organization.Id));
+            Assert.IsTrue(subjects.Contains(organization));
         }
 
         [Test]
@@ -151,8 +179,12 @@ namespace Bookstore.Services.People.Tests
                 new FindSubjectsQuery {SubjectId = person.Id});
             var foundOrganizationResponse = await _findSubjectsQuery.GetResponse<FindSubjectsQueryResult>(
                 new FindSubjectsQuery {SubjectId = organization.Id});
-            var foundPerson = foundPersonResponse.Message.Results.SingleOrDefault();
-            var foundOrganization = foundOrganizationResponse.Message.Results.SingleOrDefault();
+            var peopleJson = await foundPersonResponse.Message.Results.Value;
+            var people = JsonConvert.DeserializeObject<List<Person>>(peopleJson);
+            var foundPerson = people.SingleOrDefault();
+            var organizationsJson = await foundOrganizationResponse.Message.Results.Value;
+            var organizations = JsonConvert.DeserializeObject<List<Organization>>(organizationsJson);
+            var foundOrganization = organizations.SingleOrDefault();
             Assert.IsNull(foundPerson);
             Assert.IsNull(foundOrganization);
         }
