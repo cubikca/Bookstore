@@ -1,0 +1,26 @@
+﻿@page "/"
+@inject DialogService _dialogs
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+<RadzenButton Text="@text" Click="SayHello" />
+
+@code
+{
+    string text = "Hello, world!";
+
+    void SayHello()
+    {
+        _dialogs.Open("Hello, world!", ds =>
+            @<div>
+                <h3>Hello, world!</h3>
+                <p>
+                    <RadzenButton Text="Ok" Click="() => ds.Close(true)" />
+                </p>
+            </div>); 
+    }
+}

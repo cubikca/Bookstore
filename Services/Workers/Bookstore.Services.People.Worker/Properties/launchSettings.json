@@ -1,4 +1,4 @@
-﻿{
+{
   "profiles": {
     "Bookstore.Services.People.Worker": {
       "commandName": "Project",
@@ -9,6 +9,13 @@
     },
     "Docker": {
       "commandName": "Docker"
+    },
+    "WSL 2": {
+      "commandName": "WSL2",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "distributionName": ""
     }
   }
 }

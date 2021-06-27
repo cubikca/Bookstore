@@ -11,7 +11,7 @@ services:
     tty: true
     stdin_open: true
   bookstore.services.people.worker:
-    image: cubikca.azurecr.io/bookstore/booksworker
+    image: cubikca.azurecr.io/bookstore/peopleworker
     build:
       context: .
       dockerfile: Services/Workers/Bookstore.Services.People.Worker/Dockerfile
@@ -19,6 +19,17 @@ services:
       - DOTNET_ENVIRONMENT=Development
     tty: true
     stdin_open: true
+  bookstore.ui.web.bookstore:
+    image: cubikca.azurecr.io/bookstore/bookstoreweb
+    build:
+      context: .
+      dockerfile: UI/Web/Bookstore.UI.Web.Store/Server/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:5001;http://+:5000
+    ports:
+      - 5000:5000
+      - 5001:5001
   mysql:
     image: mysql
     environment:
