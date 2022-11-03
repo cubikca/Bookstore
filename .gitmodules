@@ -1,0 +1,3 @@
+[submodule "EventFramework"]
+	path = EventFramework
+	url = git@github.com:cubikca/EventFramework.git
